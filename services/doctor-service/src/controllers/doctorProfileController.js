@@ -25,3 +25,27 @@ const buildApprovedDoctorQuery = () => {
 
   return query;
 };
+
+
+
+// Doctor views own full profile
+export const getMyDoctorProfile = async (req, res) => {
+  try {
+    const doctor = await Doctor.findById(req.user.id).select(INTERNAL_DOCTOR_FIELDS);
+
+    if (!doctor) {
+      return res.status(404).json({
+        message: "Doctor not found."
+      });
+    }
+
+    return res.status(200).json({
+      doctor
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to fetch doctor profile.",
+      error: error.message
+    });
+  }
+};
