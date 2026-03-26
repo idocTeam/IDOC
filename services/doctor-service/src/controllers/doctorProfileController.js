@@ -160,3 +160,29 @@ export const deleteMyDoctorAccount = async (req, res) => {
     });
   }
 };
+
+
+
+// Internal detailed doctor lookup by ID
+export const getDoctorById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const doctor = await Doctor.findById(id).select(INTERNAL_DOCTOR_FIELDS);
+
+    if (!doctor) {
+      return res.status(404).json({
+        message: "Doctor not found."
+      });
+    }
+
+    return res.status(200).json({
+      doctor
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to fetch doctor by ID.",
+      error: error.message
+    });
+  }
+};
