@@ -49,3 +49,67 @@ export const getMyDoctorProfile = async (req, res) => {
     });
   }
 };
+
+
+// Doctor updates own profile
+export const updateMyDoctorProfile = async (req, res) => {
+  try {
+    const doctor = await Doctor.findById(req.user.id).select(INTERNAL_DOCTOR_FIELDS);
+
+    if (!doctor) {
+      return res.status(404).json({
+        message: "Doctor not found."
+      });
+    }
+
+    // Fields doctor is allowed to update
+    const allowedFields = [
+      "fullName",
+      "phone",
+      "specialty",
+      "qualifications",
+      "hospital",
+      "consultationFee",
+      "bio",
+      "experienceYears",
+      "availability"
+    ];
+
+    const updates = {};
+
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) {
+        updates[field] = req.body[field];
+      }
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({
+        message: "No valid fields provided for update."
+      });
+    }
+
+    // Prevent accidental invalid availability type
+    if (
+      updates.availability !== undefined &&
+      !Array.isArray(updates.availability)
+    ) {
+      return res.status(400).json({
+        message: "Availability must be an array."
+      });
+    }
+
+    Object.assign(doctor, updates);
+    await doctor.save();
+
+    return res.status(200).json({
+      message: "Doctor profile updated successfully.",
+      doctor
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to update doctor profile.",
+      error: error.message
+    });
+  }
+};
