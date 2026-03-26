@@ -13,4 +13,15 @@ const PUBLIC_DOCTOR_FIELDS =
 const INTERNAL_DOCTOR_FIELDS =
   "-pw";
 
-  
+
+// Common query builder for approved + active doctors
+const buildApprovedDoctorQuery = () => {
+  const query = { approvalStatus: "approved" };
+
+  // Only apply isActive filter if your schema has that field
+  if (Doctor.schema.path("isActive")) {
+    query.isActive = true;
+  }
+
+  return query;
+};
