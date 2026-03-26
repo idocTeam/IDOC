@@ -6,6 +6,7 @@ import doctorAuthRoutes from "./routes/doctorAuthRoutes.js";
 import doctorProfileRoutes from "./routes/doctorProfileRoutes.js";
 import availabilityRoutes from "./routes/availabilityRoutes.js";
 import prescriptionRoutes from "./routes/prescriptionRoutes.js";
+import doctorIntegrationRoutes from "./routes/doctorIntegrationRoutes.js";
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.use("/api/doctors/auth", doctorAuthRoutes);
 app.use("/api/doctors/profile", doctorProfileRoutes);
 app.use("/api/doctors/availability", availabilityRoutes);
 app.use("/api/doctors/prescriptions", prescriptionRoutes);
+app.use("/api/doctors/integrations", doctorIntegrationRoutes);
 
 // 404 handler
 app.use((req, res) => {
