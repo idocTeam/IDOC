@@ -13,7 +13,6 @@ const PUBLIC_DOCTOR_FIELDS =
 const INTERNAL_DOCTOR_FIELDS =
   "-pw";
 
-
 // Common query builder for approved + active doctors
 const buildApprovedDoctorQuery = () => {
   const query = { approvalStatus: "approved" };
@@ -25,8 +24,6 @@ const buildApprovedDoctorQuery = () => {
 
   return query;
 };
-
-
 
 // Doctor views own full profile
 export const getMyDoctorProfile = async (req, res) => {
@@ -49,7 +46,6 @@ export const getMyDoctorProfile = async (req, res) => {
     });
   }
 };
-
 
 // Doctor updates own profile
 export const updateMyDoctorProfile = async (req, res) => {
@@ -114,7 +110,6 @@ export const updateMyDoctorProfile = async (req, res) => {
   }
 };
 
-
 // Doctor deletes own account
 // Prefer soft delete if your schema has isActive / deletedAt
 export const deleteMyDoctorAccount = async (req, res) => {
@@ -161,8 +156,6 @@ export const deleteMyDoctorAccount = async (req, res) => {
   }
 };
 
-
-
 // Internal detailed doctor lookup by ID
 export const getDoctorById = async (req, res) => {
   try {
@@ -186,7 +179,6 @@ export const getDoctorById = async (req, res) => {
     });
   }
 };
-
 
 // Public/internal list of all approved doctors
 export const getAllApprovedDoctors = async (req, res) => {
@@ -219,7 +211,6 @@ export const getAllApprovedDoctors = async (req, res) => {
     });
   }
 };
-
 
 // Broad search across name, specialty, hospital, qualifications, bio
 export const searchApprovedDoctors = async (req, res) => {
@@ -270,8 +261,6 @@ export const searchApprovedDoctors = async (req, res) => {
     });
   }
 };
-
-
 
 // Search only by specialty
 export const searchDoctorsBySpecialty = async (req, res) => {
@@ -356,7 +345,6 @@ export const searchDoctorsByHospital = async (req, res) => {
     });
   }
 };
-
 
 // Public-safe single doctor profile
 export const getDoctorPublicProfile = async (req, res) => {
