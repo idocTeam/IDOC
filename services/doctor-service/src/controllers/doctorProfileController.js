@@ -186,3 +186,36 @@ export const getDoctorById = async (req, res) => {
     });
   }
 };
+
+
+// Public/internal list of all approved doctors
+export const getAllApprovedDoctors = async (req, res) => {
+  try {
+    const page = Math.max(Number(req.query.page) || 1, 1);
+    const limit = Math.max(Number(req.query.limit) || 10, 1);
+    const skip = (page - 1) * limit;
+
+    const query = buildApprovedDoctorQuery();
+
+    const [doctors, total] = await Promise.all([
+      Doctor.find(query)
+        .select(PUBLIC_DOCTOR_FIELDS)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Doctor.countDocuments(query)
+    ]);
+
+    return res.status(200).json({
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+      doctors
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to fetch approved doctors.",
+      error: error.message
+    });
+  }
+};
