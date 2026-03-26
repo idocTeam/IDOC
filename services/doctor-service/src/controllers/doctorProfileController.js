@@ -219,3 +219,54 @@ export const getAllApprovedDoctors = async (req, res) => {
     });
   }
 };
+
+
+// Broad search across name, specialty, hospital, qualifications, bio
+export const searchApprovedDoctors = async (req, res) => {
+  try {
+    const q = (req.query.q || "").trim();
+    const page = Math.max(Number(req.query.page) || 1, 1);
+    const limit = Math.max(Number(req.query.limit) || 10, 1);
+    const skip = (page - 1) * limit;
+
+    if (!q) {
+      return res.status(400).json({
+        message: "Search query 'q' is required."
+      });
+    }
+
+    const safeQuery = escapeRegex(q);
+
+    const query = {
+      ...buildApprovedDoctorQuery(),
+      $or: [
+        { fullName: { $regex: safeQuery, $options: "i" } },
+        { specialty: { $regex: safeQuery, $options: "i" } },
+        { hospital: { $regex: safeQuery, $options: "i" } },
+        { qualifications: { $regex: safeQuery, $options: "i" } },
+        { bio: { $regex: safeQuery, $options: "i" } }
+      ]
+    };
+
+    const [doctors, total] = await Promise.all([
+      Doctor.find(query)
+        .select(PUBLIC_DOCTOR_FIELDS)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Doctor.countDocuments(query)
+    ]);
+
+    return res.status(200).json({
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+      doctors
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to search approved doctors.",
+      error: error.message
+    });
+  }
+};
