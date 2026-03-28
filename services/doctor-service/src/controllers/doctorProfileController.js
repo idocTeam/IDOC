@@ -67,8 +67,8 @@ export const updateMyDoctorProfile = async (req, res) => {
       "hospital",
       "consultationFee",
       "bio",
-      "experienceYears",
-      "availability"
+      "experienceYears"
+      
     ];
 
     const updates = {};
@@ -85,15 +85,7 @@ export const updateMyDoctorProfile = async (req, res) => {
       });
     }
 
-    // Prevent accidental invalid availability type
-    if (
-      updates.availability !== undefined &&
-      !Array.isArray(updates.availability)
-    ) {
-      return res.status(400).json({
-        message: "Availability must be an array."
-      });
-    }
+    
 
     Object.assign(doctor, updates);
     await doctor.save();
@@ -370,6 +362,213 @@ export const getDoctorPublicProfile = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       message: "Failed to fetch doctor public profile.",
+      error: error.message
+    });
+  }
+};
+
+
+//for admin purpos
+
+// Internal admin-facing fields
+const ADMIN_DOCTOR_FIELDS = "-pw";
+
+// Get all pending doctors for admin review
+export const getPendingDoctorsForAdmin = async (req, res) => {
+  try {
+    const page = Math.max(Number(req.query.page) || 1, 1);
+    const limit = Math.max(Number(req.query.limit) || 10, 1);
+    const skip = (page - 1) * limit;
+
+    const query = { approvalStatus: "pending" };
+
+    // If schema supports soft delete, avoid deleted doctors
+    if (Doctor.schema.path("isActive")) {
+      query.isActive = { $ne: false };
+    }
+
+    const [doctors, total] = await Promise.all([
+      Doctor.find(query)
+        .select(ADMIN_DOCTOR_FIELDS)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Doctor.countDocuments(query)
+    ]);
+
+    return res.status(200).json({
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+      doctors
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to fetch pending doctors.",
+      error: error.message
+    });
+  }
+};
+
+// Get all approved doctors for admin view
+export const getApprovedDoctorsForAdmin = async (req, res) => {
+  try {
+    const page = Math.max(Number(req.query.page) || 1, 1);
+    const limit = Math.max(Number(req.query.limit) || 10, 1);
+    const skip = (page - 1) * limit;
+
+    const query = { approvalStatus: "approved" };
+
+    if (Doctor.schema.path("isActive")) {
+      query.isActive = { $ne: false };
+    }
+
+    const [doctors, total] = await Promise.all([
+      Doctor.find(query)
+        .select(ADMIN_DOCTOR_FIELDS)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Doctor.countDocuments(query)
+    ]);
+
+    return res.status(200).json({
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+      doctors
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to fetch approved doctors for admin.",
+      error: error.message
+    });
+  }
+};
+
+
+// Admin approves a doctor
+export const approveDoctor = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const doctor = await Doctor.findById(id).select(INTERNAL_DOCTOR_FIELDS);
+
+    if (!doctor) {
+      return res.status(404).json({
+        message: "Doctor not found."
+      });
+    }
+
+    // Optional soft-delete protection
+    if (Doctor.schema.path("isActive") && doctor.isActive === false) {
+      return res.status(400).json({
+        message: "Cannot approve an inactive doctor."
+      });
+    }
+
+    doctor.approvalStatus = "approved";
+
+    // Clear rejection reason if schema supports it
+    if (Doctor.schema.path("rejectionReason")) {
+      doctor.rejectionReason = "";
+    }
+
+    await doctor.save();
+
+    return res.status(200).json({
+      message: "Doctor approved successfully.",
+      doctor
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to approve doctor.",
+      error: error.message
+    });
+  }
+};
+
+// Admin rejects a doctor
+export const rejectDoctor = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { rejectionReason } = req.body;
+
+    const doctor = await Doctor.findById(id).select(INTERNAL_DOCTOR_FIELDS);
+
+    if (!doctor) {
+      return res.status(404).json({
+        message: "Doctor not found."
+      });
+    }
+
+    if (Doctor.schema.path("isActive") && doctor.isActive === false) {
+      return res.status(400).json({
+        message: "Cannot reject an inactive doctor."
+      });
+    }
+
+    doctor.approvalStatus = "rejected";
+
+    if (Doctor.schema.path("rejectionReason")) {
+      doctor.rejectionReason = rejectionReason?.trim?.() || "Rejected by admin";
+    }
+
+    await doctor.save();
+
+    return res.status(200).json({
+      message: "Doctor rejected successfully.",
+      doctor
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to reject doctor.",
+      error: error.message
+    });
+  }
+};
+
+// Admin deletes a doctor
+export const deleteDoctorByAdmin = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const doctor = await Doctor.findById(id);
+
+    if (!doctor) {
+      return res.status(404).json({
+        message: "Doctor not found."
+      });
+    }
+
+    const hasIsActive = !!Doctor.schema.path("isActive");
+    const hasDeletedAt = !!Doctor.schema.path("deletedAt");
+
+    // Prefer soft delete if schema supports it
+    if (hasIsActive || hasDeletedAt) {
+      if (hasIsActive) {
+        doctor.isActive = false;
+      }
+
+      if (hasDeletedAt) {
+        doctor.deletedAt = new Date();
+      }
+
+      await doctor.save();
+
+      return res.status(200).json({
+        message: "Doctor deleted successfully (soft delete)."
+      });
+    }
+
+    await Doctor.findByIdAndDelete(id);
+
+    return res.status(200).json({
+      message: "Doctor deleted successfully."
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to delete doctor.",
       error: error.message
     });
   }
