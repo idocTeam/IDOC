@@ -560,3 +560,55 @@ export const filterDoctorsByAvailability = async (req, res) => {
     });
   }
 };
+
+
+// getDoctorBookingContextById 
+
+export const getDoctorBookingContextById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const doctor = await Doctor.findById(id).select(
+      "_id fullName specialty hospital approvalStatus isActive"
+    );
+
+    if (!doctor) {
+      return res.status(404).json({
+        message: "Doctor not found."
+      });
+    }
+
+    if (doctor.approvalStatus !== "approved") {
+      return res.status(404).json({
+        message: "Doctor is not approved for booking."
+      });
+    }
+
+    if (Doctor.schema.path("isActive") && doctor.isActive === false) {
+      return res.status(404).json({
+        message: "Doctor is inactive."
+      });
+    }
+
+    const availabilityDoc = await Availability.findOne({ doctorId: doctor._id });
+
+    return res.status(200).json({
+      doctor: {
+        id: doctor._id,
+        fullName: doctor.fullName,
+        specialty: doctor.specialty,
+        hospital: doctor.hospital,
+        approvalStatus: doctor.approvalStatus,
+        isActive: doctor.isActive ?? true,
+        availability: availabilityDoc
+          ? normalizeAvailabilityArray(availabilityDoc.slots)
+          : []
+      }
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to fetch doctor booking context.",
+      error: error.message
+    });
+  }
+};
