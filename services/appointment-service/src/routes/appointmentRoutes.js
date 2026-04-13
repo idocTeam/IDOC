@@ -3,23 +3,75 @@
 import express from "express";
 import {
   create,
+  getById,
+  getMine,
+  getDoctorMine,
   accept,
+  reject,
   cancel,
-  getBookableSlots
+  complete,
+  reschedule,
+  getBookableSlots,
+  doctorReschedule,
+  acceptDoctorRescheduleController,
+  rejectDoctorRescheduleController
 } from "../controllers/appointmentController.js";
-import { protectPatient, protectDoctor } from "../middlewares/authMiddleware.js";
+
+import {
+  protectUser,
+  protectPatient,
+  protectDoctor
+} from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
+/**
+ * Public/shared booking slot lookup
+ * Example:
+ * GET /api/appointments/doctors/:doctorId/bookable-slots?date=2026-04-06&mode=physical
+ */
 router.get("/doctors/:doctorId/bookable-slots", getBookableSlots);
 
-// patient creates appointment
+/**
+ * Patient routes
+ */
 router.post("/create", protectPatient, create);
+router.post("/", protectPatient, create);
 
-// doctor accepts
-router.patch("/:id/accept", protectDoctor, accept);
+router.get("/mine", protectPatient, getMine);
 
-// patient cancels
 router.patch("/:id/cancel", protectPatient, cancel);
+router.patch("/:id/reschedule", protectPatient, reschedule);
+
+/**
+ * Patient decision routes for doctor-proposed reschedule
+ */
+router.patch(
+  "/:id/accept-doctor-reschedule",
+  protectPatient,
+  acceptDoctorRescheduleController
+);
+
+router.patch(
+  "/:id/reject-doctor-reschedule",
+  protectPatient,
+  rejectDoctorRescheduleController
+);
+
+/**
+ * Doctor routes
+ */
+router.get("/doctor/me", protectDoctor, getDoctorMine);
+
+router.patch("/:id/accept", protectDoctor, accept);
+router.patch("/:id/reject", protectDoctor, reject);
+router.patch("/:id/complete", protectDoctor, complete);
+router.patch("/:id/doctor-reschedule", protectDoctor, doctorReschedule);
+
+/**
+ * Shared authenticated route
+ * Patient or doctor who owns the appointment can access it
+ */
+router.get("/:id", protectUser, getById);
 
 export default router;
