@@ -1,0 +1,61 @@
+services:
+  gateway:
+    build:
+      context: ./gateway
+    container_name: idoc-gateway
+    ports:
+      - "5000:5000"
+    environment:
+      PORT: 5000
+      ADMIN_SERVICE_URL: http://admin-service:5004
+      DOCTOR_SERVICE_URL: http://doctor-service:5002
+      PATIENT_SERVICE_URL: http://patient-service:5003
+      CORS_ORIGINS: http://localhost:5173,http://localhost:3000
+    depends_on:
+      - admin-service
+      - doctor-service
+      - patient-service
+    restart: unless-stopped
+
+  admin-service:
+    build:
+      context: ./services/admin-service
+    container_name: idoc-admin-service
+    ports:
+      - "5004:5004"
+    env_file:
+      - ./services/admin-service/.env
+    environment:
+      PORT: 5004
+      DOCTOR_SERVICE_URL: http://doctor-service:5002
+      PATIENT_SERVICE_URL: http://patient-service:5003
+    restart: unless-stopped
+
+  doctor-service:
+    build:
+      context: ./services/doctor-service
+    container_name: idoc-doctor-service
+    ports:
+      - "5002:5002"
+    env_file:
+      - ./services/doctor-service/.env
+    environment:
+      PORT: 5002
+    restart: unless-stopped
+
+  patient-service:
+    build:
+      context: ./services/patient-service
+    container_name: idoc-patient-service
+    ports:
+      - "5003:5003"
+    env_file:
+      - ./services/patient-service/.env
+    environment:
+      PORT: 5003
+    volumes:
+      - patient_uploads:/app/uploads
+    restart: unless-stopped
+
+volumes:
+  patient_uploads:
