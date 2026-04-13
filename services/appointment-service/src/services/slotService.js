@@ -95,7 +95,7 @@ export const findMatchingAvailabilityWindows = ({
 };
 
 /**
- * Find one exact generated sub-slot that matches patient selection
+ * Find one exact generated sub-slot that matches selection
  */
 export const findMatchingGeneratedSlot = ({
   availability = [],
@@ -131,14 +131,26 @@ export const findMatchingGeneratedSlot = ({
 };
 
 /**
- * Check whether doctor already has appointment at this exact/overlapping time
+ * Check doctor conflicts
  */
-export const hasDoctorConflict = async (doctorId, date, start, end) => {
-  const appointments = await Appointment.find({
+export const hasDoctorConflict = async (
+  doctorId,
+  date,
+  start,
+  end,
+  excludeAppointmentId = null
+) => {
+  const query = {
     doctorId,
     appointmentDate: date,
     status: { $in: ["pending", "accepted"] }
-  });
+  };
+
+  if (excludeAppointmentId) {
+    query._id = { $ne: excludeAppointmentId };
+  }
+
+  const appointments = await Appointment.find(query);
 
   return appointments.some((app) =>
     isOverlapping(start, end, app.startTime, app.endTime)
@@ -146,14 +158,26 @@ export const hasDoctorConflict = async (doctorId, date, start, end) => {
 };
 
 /**
- * Check whether patient already has appointment at this time
+ * Check patient conflicts
  */
-export const hasPatientConflict = async (patientId, date, start, end) => {
-  const appointments = await Appointment.find({
+export const hasPatientConflict = async (
+  patientId,
+  date,
+  start,
+  end,
+  excludeAppointmentId = null
+) => {
+  const query = {
     patientId,
     appointmentDate: date,
     status: { $in: ["pending", "accepted"] }
-  });
+  };
+
+  if (excludeAppointmentId) {
+    query._id = { $ne: excludeAppointmentId };
+  }
+
+  const appointments = await Appointment.find(query);
 
   return appointments.some((app) =>
     isOverlapping(start, end, app.startTime, app.endTime)
@@ -161,25 +185,32 @@ export const hasPatientConflict = async (patientId, date, start, end) => {
 };
 
 /**
- * Count active appointments in one exact sub-slot
+ * Count appointments in one exact slot
  */
 export const countAppointmentsInSlot = async ({
   doctorId,
   appointmentDate,
   startTime,
-  endTime
+  endTime,
+  excludeAppointmentId = null
 }) => {
-  return Appointment.countDocuments({
+  const query = {
     doctorId,
     appointmentDate,
     startTime,
     endTime,
     status: { $in: ["pending", "accepted"] }
-  });
+  };
+
+  if (excludeAppointmentId) {
+    query._id = { $ne: excludeAppointmentId };
+  }
+
+  return Appointment.countDocuments(query);
 };
 
 /**
- * Build all slots for doctor/date and mark booked/free
+ * Build all bookable slots for a given doctor/date
  */
 export const buildBookableSlots = async ({
   doctorId,
