@@ -39,8 +39,8 @@ export const protectUser = async (req, res, next) => {
     }
 
     req.user = {
-      id: decoded.id,
-      userId: decoded.userId,
+      id: decoded.id || decoded.userId,
+      userId: decoded.userId || decoded.id,
       email: decoded.email,
       role: decoded.role
     };
@@ -75,8 +75,8 @@ export const protectPatient = async (req, res, next) => {
     }
 
     req.user = {
-      id: decoded.id,
-      userId: decoded.userId,
+      id: decoded.id || decoded.userId,
+      userId: decoded.userId || decoded.id,
       email: decoded.email,
       role: decoded.role
     };
@@ -113,8 +113,8 @@ export const protectDoctor = async (req, res, next) => {
     }
 
     req.user = {
-      id: decoded.id,
-      userId: decoded.userId,
+      id: decoded.id || decoded.userId,
+      userId: decoded.userId || decoded.id,
       email: decoded.email,
       role: decoded.role
     };
