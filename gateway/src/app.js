@@ -58,8 +58,8 @@ app.get("/", (_req, res) => {
 });
 
 // Reusable proxy builder
-const buildProxy = (target, serviceName) =>
-  createProxyMiddleware({
+const buildProxy = (target, serviceName, stripPath = true) => {
+  const proxyOptions = {
     target,
     changeOrigin: true,
     xfwd: true,
@@ -73,48 +73,88 @@ const buildProxy = (target, serviceName) =>
         });
       }
     }
-  });
+  };
+
+  // If stripPath is true, we need to extract the base path from where this is used
+  // and remove it. However, the pathRewrite needs to be specific.
+  // To keep it simple, we'll manually specify the path rewrite where needed.
+  return createProxyMiddleware(proxyOptions);
+};
 
 // Admin routes
 app.use(
   "/api/admin",
-  buildProxy(process.env.ADMIN_SERVICE_URL, "admin-service")
+  createProxyMiddleware({
+    target: process.env.ADMIN_SERVICE_URL,
+    changeOrigin: true,
+    pathRewrite: { "^/api/admin": "" },
+    onError: (err, req, res) => res.status(502).json({ message: "admin-service unavailable", error: err.message })
+  })
 );
 
 // Doctor routes
 app.use(
   "/api/doctors",
-  buildProxy(process.env.DOCTOR_SERVICE_URL, "doctor-service")
+  createProxyMiddleware({
+    target: process.env.DOCTOR_SERVICE_URL,
+    changeOrigin: true,
+    pathRewrite: { "^/api/doctors": "" },
+    onError: (err, req, res) => res.status(502).json({ message: "doctor-service unavailable", error: err.message })
+  })
 );
 
 // Patient routes
 app.use(
   "/api/patients",
-  buildProxy(process.env.PATIENT_SERVICE_URL, "patient-service")
+  createProxyMiddleware({
+    target: process.env.PATIENT_SERVICE_URL,
+    changeOrigin: true,
+    pathRewrite: { "^/api/patients": "" },
+    onError: (err, req, res) => res.status(502).json({ message: "patient-service unavailable", error: err.message })
+  })
 );
 
 // Appointment routes
 app.use(
   "/api/appointments",
-  buildProxy(process.env.APPOINTMENT_SERVICE_URL, "appointment-service")
+  createProxyMiddleware({
+    target: process.env.APPOINTMENT_SERVICE_URL,
+    changeOrigin: true,
+    pathRewrite: { "^/api/appointments": "" },
+    onError: (err, req, res) => res.status(502).json({ message: "appointment-service unavailable", error: err.message })
+  })
 );
 
 // Payment routes
 app.use(
   "/api/payments",
-  buildProxy(process.env.PAYMENT_SERVICE_URL, "payment-service")
+  createProxyMiddleware({
+    target: process.env.PAYMENT_SERVICE_URL,
+    changeOrigin: true,
+    pathRewrite: { "^/api/payments": "" },
+    onError: (err, req, res) => res.status(502).json({ message: "payment-service unavailable", error: err.message })
+  })
 );
 
 // Telemedicine routes
 app.use(
   "/api/telemedicine",
-  buildProxy(process.env.TELEMEDICINE_SERVICE_URL, "telemedicine-service")
+  createProxyMiddleware({
+    target: process.env.TELEMEDICINE_SERVICE_URL,
+    changeOrigin: true,
+    pathRewrite: { "^/api/telemedicine": "" },
+    onError: (err, req, res) => res.status(502).json({ message: "telemedicine-service unavailable", error: err.message })
+  })
 );
 
-// Uploaded files from patient-service
+// Uploaded files from patient-service (don't rewrite /uploads)
 app.use(
   "/uploads",
-  buildProxy(process.env.PATIENT_SERVICE_URL, "patient-service uploads")
+  createProxyMiddleware({
+    target: process.env.PATIENT_SERVICE_URL,
+    changeOrigin: true,
+    onError: (err, req, res) => res.status(502).json({ message: "patient-service uploads unavailable", error: err.message })
+  })
 );
 
 // 404 fallback

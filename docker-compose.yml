@@ -13,7 +13,7 @@ services:
       APPOINTMENT_SERVICE_URL: http://appointment-service:5007
       PAYMENT_SERVICE_URL: http://payment-service:5005
       TELEMEDICINE_SERVICE_URL: http://telemedicine-service:5006
-      CORS_ORIGINS: http://localhost:5173,http://localhost:3000
+      CORS_ORIGINS: http://localhost:5173,http://localhost:3000,http://localhost:80
     depends_on:
       - admin-service
       - doctor-service
@@ -21,6 +21,18 @@ services:
       - appointment-service
       - payment-service
       - telemedicine-service
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: http://localhost:5000/api
+    container_name: idoc-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - gateway
     restart: unless-stopped
 
   admin-service:
@@ -74,6 +86,7 @@ services:
     environment:
       PORT: 5007
       MONGO_URI: mongodb://idoc-mongodb:27017/idoc_appointment
+      DOCTOR_SERVICE_URL: http://doctor-service:5002
     depends_on:
       - mongodb
     restart: unless-stopped
@@ -91,6 +104,7 @@ services:
       MONGO_URI: mongodb://idoc-mongodb:27017/idoc_payment
       APPOINTMENT_SERVICE_URL: http://appointment-service:5007
       TELEMEDICINE_SERVICE_URL: http://telemedicine-service:5006
+      PATIENT_SERVICE_URL: http://patient-service:5003
     depends_on:
       - appointment-service
       - mongodb

@@ -19,16 +19,26 @@ const Booking = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [fetchingDoctor, setFetchingDoctor] = useState(true);
   const [error, setError] = useState('');
+  const [doctor, setDoctor] = useState(null);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [consultationType, setConsultationType] = useState('telemedicine');
   
-  const doctor = {
-    name: 'Sarah Smith',
-    specialty: 'Cardiology',
-    image: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80',
-    fee: '$50'
+  React.useEffect(() => {
+    fetchDoctor();
+  }, [id]);
+
+  const fetchDoctor = async () => {
+    try {
+      const { data } = await doctorService.getById(id);
+      setDoctor(data.doctor);
+    } catch (err) {
+      setError('Failed to fetch doctor details');
+    } finally {
+      setFetchingDoctor(false);
+    }
   };
 
   const handleBooking = async (e) => {
@@ -39,10 +49,10 @@ const Booking = () => {
     try {
       await appointmentService.create({
         doctorId: id,
-        doctorName: doctor.name,
+        doctorName: doctor.fullName,
         appointmentDate: selectedDate,
         startTime: selectedTime,
-        endTime: '10:30',
+        endTime: '10:30', // Dummy end time
         consultationType,
         reason: 'General checkup'
       });
@@ -54,6 +64,23 @@ const Booking = () => {
       setLoading(false);
     }
   };
+
+  if (fetchingDoctor) {
+    return (
+      <div className="pt-32 pb-20 min-h-screen flex items-center justify-center">
+        <Loader2 className="w-12 h-12 animate-spin text-primary-600" />
+      </div>
+    );
+  }
+
+  if (!doctor) {
+    return (
+      <div className="pt-32 pb-20 min-h-screen text-center">
+        <h2 className="text-2xl font-bold text-slate-900">Doctor not found</h2>
+        <button onClick={() => navigate('/doctors')} className="btn btn-primary mt-4 mx-auto">Back to Search</button>
+      </div>
+    );
+  }
 
   return (
     <div className="pt-32 pb-20 min-h-screen bg-slate-50">
@@ -182,8 +209,8 @@ const Booking = () => {
               
               <div className="flex flex-col items-center text-center space-y-6 relative z-10">
                 <img 
-                  src={doctor.image} 
-                  alt={doctor.name} 
+                  src={doctor.image || 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80'} 
+                  alt={doctor.fullName} 
                   className="w-24 h-24 rounded-3xl object-cover border-4 border-slate-800 shadow-2xl"
                 />
                 <div>
@@ -191,13 +218,13 @@ const Booking = () => {
                     <Stethoscope className="w-4 h-4" />
                     <span className="text-xs font-bold uppercase tracking-wider">{doctor.specialty}</span>
                   </div>
-                  <h3 className="text-2xl font-bold">Dr. {doctor.name}</h3>
+                  <h3 className="text-2xl font-bold">Dr. {doctor.fullName}</h3>
                 </div>
 
                 <div className="w-full space-y-4 pt-6 border-t border-slate-800">
                   <div className="flex justify-between items-center">
                     <span className="text-slate-400 text-sm font-medium">Consultation Fee</span>
-                    <span className="text-xl font-bold">{doctor.fee}</span>
+                    <span className="text-xl font-bold">${doctor.consultationFee || 50}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-slate-400 text-sm font-medium">Service Charge</span>
@@ -205,7 +232,7 @@ const Booking = () => {
                   </div>
                   <div className="flex justify-between items-center pt-4 border-t border-slate-800">
                     <span className="text-primary-400 font-bold uppercase tracking-wider text-xs">Total Amount</span>
-                    <span className="text-3xl font-bold text-primary-500">$55</span>
+                    <span className="text-3xl font-bold text-primary-500">${(doctor.consultationFee || 50) + 5}</span>
                   </div>
                 </div>
               </div>

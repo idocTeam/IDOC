@@ -4,7 +4,7 @@ const APPOINTMENT_SERVICE_URL = process.env.APPOINTMENT_SERVICE_URL || "http://l
 
 export const getAppointmentById = async (id, token) => {
   try {
-    const response = await axios.get(`${APPOINTMENT_SERVICE_URL}/appointments/${id}`, {
+    const response = await axios.get(`${APPOINTMENT_SERVICE_URL}/${id}`, {
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -18,7 +18,7 @@ export const getAppointmentById = async (id, token) => {
 export const updateAppointmentPaymentStatus = async (id, paymentStatus, amountPaid, token) => {
   try {
     const response = await axios.patch(
-      `${APPOINTMENT_SERVICE_URL}/appointments/${id}/payment-status`,
+      `${APPOINTMENT_SERVICE_URL}/${id}/mark-paid`,
       { paymentStatus, amountPaid },
       {
         headers: {

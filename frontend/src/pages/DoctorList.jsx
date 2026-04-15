@@ -22,50 +22,10 @@ const DoctorList = () => {
   const fetchDoctors = async () => {
     setLoading(true);
     try {
-      // Mock data for initial UI display
-      const mockDoctors = [
-        {
-          _id: '1',
-          name: 'Sarah Smith',
-          specialty: 'Cardiology',
-          location: 'Colombo 07',
-          rating: 4.9,
-          reviews: 124,
-          image: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80',
-          availability: 'Available Today',
-          fee: '$50'
-        },
-        {
-          _id: '2',
-          name: 'James Wilson',
-          specialty: 'Neurology',
-          location: 'Kandy',
-          rating: 4.8,
-          reviews: 89,
-          image: 'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80',
-          availability: 'Next: Tomorrow',
-          fee: '$45'
-        },
-        {
-          _id: '3',
-          name: 'Emily Chen',
-          specialty: 'Pediatrics',
-          location: 'Galle',
-          rating: 5.0,
-          reviews: 210,
-          image: 'https://images.unsplash.com/photo-1594824476967-48c8b964273f?ixlib=rb-1.2.1&auto=format&fit=crop&w=300&q=80',
-          availability: 'Available Today',
-          fee: '$40'
-        }
-      ];
-      
-      const filtered = specialty 
-        ? mockDoctors.filter(d => d.specialty === specialty)
-        : mockDoctors;
-
-      setDoctors(filtered);
+      const { data } = await doctorService.getAll({ specialty });
+      setDoctors(data.doctors || []);
     } catch (err) {
-      console.error('Failed to fetch doctors');
+      console.error('Failed to fetch doctors', err);
     } finally {
       setLoading(false);
     }

@@ -1,16 +1,18 @@
 import api from './api';
 
 export const patientService = {
-  login: (credentials) => api.post('/patients/login', credentials),
-  register: (data) => api.post('/patients/register', data),
-  getProfile: () => api.get('/patients/me'),
-  updateProfile: (data) => api.put('/patients/me', data),
+  login: (credentials) => api.post('/patients/auth/login', credentials),
+  register: (data) => api.post('/patients/auth/register', data),
+  getProfile: () => api.get('/patients/auth/me'),
+  updateProfile: (data) => api.put('/patients/auth/me', data),
 };
 
 export const doctorService = {
-  login: (credentials) => api.post('/doctors/login', credentials),
-  getAll: (params) => api.get('/doctors', { params }),
-  getById: (id) => api.get(`/doctors/${id}`),
+  login: (credentials) => api.post('/doctors/auth/login', credentials),
+  register: (data) => api.post('/doctors/auth/register', data),
+  getAll: (params) => api.get('/doctors/profile/approved', { params }),
+  search: (params) => api.get('/doctors/profile/search', { params }),
+  getById: (id) => api.get(`/doctors/profile/${id}`),
   getAvailability: (id, date) => api.get(`/appointments/doctors/${id}/bookable-slots`, { params: { date } }),
 };
 

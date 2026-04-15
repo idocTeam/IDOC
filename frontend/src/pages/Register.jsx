@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, User, Phone, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
+import { Mail, Lock, User, Phone, ArrowRight, AlertCircle, Loader2, Stethoscope } from 'lucide-react';
 import AuthLayout from '../components/layout/AuthLayout';
-import { patientService } from '../services';
+import { patientService, doctorService } from '../services';
 
 const Register = () => {
+  const [role, setRole] = useState('patient');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
     phone: '',
+    specialty: '',
+    consultationFee: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -21,7 +24,9 @@ const Register = () => {
     setError('');
 
     try {
-      await patientService.register(formData);
+      const service = role === 'patient' ? patientService : doctorService;
+      // Note: doctorService.register might need to be implemented in services/index.js if missing
+      await service.register(formData);
       navigate('/login', { state: { message: 'Registration successful! Please login.' } });
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed. Please try again.');
@@ -39,6 +44,28 @@ const Register = () => {
       title="Create Account" 
       subtitle="Join IDOC today and experience healthcare reimagined."
     >
+      {/* Role Switcher */}
+      <div className="flex p-1 bg-slate-100 rounded-2xl mb-8">
+        <button
+          onClick={() => setRole('patient')}
+          className={`flex-1 flex items-center justify-center space-x-2 py-3 rounded-xl text-sm font-bold transition-all ${
+            role === 'patient' ? 'bg-white text-primary-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <User className="w-4 h-4" />
+          <span>Patient</span>
+        </button>
+        <button
+          onClick={() => setRole('doctor')}
+          className={`flex-1 flex items-center justify-center space-x-2 py-3 rounded-xl text-sm font-bold transition-all ${
+            role === 'doctor' ? 'bg-white text-primary-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <Stethoscope className="w-4 h-4" />
+          <span>Doctor</span>
+        </button>
+      </div>
+
       <form onSubmit={handleRegister} className="space-y-6">
         {error && (
           <div className="p-4 bg-red-50 border border-red-100 text-red-600 text-sm rounded-2xl flex items-center space-x-3">
@@ -56,7 +83,7 @@ const Register = () => {
               type="text"
               required
               className="input pl-12"
-              placeholder="John Doe"
+              placeholder={role === 'doctor' ? 'Dr. John Doe' : 'John Doe'}
               value={formData.name}
               onChange={handleChange}
             />
@@ -78,6 +105,47 @@ const Register = () => {
             />
           </div>
         </div>
+
+        {role === 'doctor' && (
+          <>
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-slate-700 ml-1">Specialty</label>
+              <div className="relative">
+                <Stethoscope className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+                <select
+                  name="specialty"
+                  required
+                  className="input pl-12 appearance-none"
+                  value={formData.specialty}
+                  onChange={handleChange}
+                >
+                  <option value="">Select Specialty</option>
+                  <option value="Cardiology">Cardiology</option>
+                  <option value="Dermatology">Dermatology</option>
+                  <option value="Neurology">Neurology</option>
+                  <option value="Pediatrics">Pediatrics</option>
+                  <option value="Psychiatry">Psychiatry</option>
+                  <option value="General Medicine">General Medicine</option>
+                </select>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-slate-700 ml-1">Consultation Fee ($)</label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
+                <input
+                  name="consultationFee"
+                  type="number"
+                  required
+                  className="input pl-10"
+                  placeholder="50"
+                  value={formData.consultationFee}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+          </>
+        )}
 
         <div className="space-y-2">
           <label className="text-sm font-bold text-slate-700 ml-1">Phone Number</label>

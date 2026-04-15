@@ -24,9 +24,9 @@ app.get("/", (req, res) => {
 });
 
 // Patient auth routes
-app.use("/api/patients/auth", patientAuthRoutes);
+app.use("/auth", patientAuthRoutes);
 
 // Patient report routes
-app.use("/api/patients/reports", reportRoutes);
+app.use("/reports", reportRoutes);
 
 export default app;

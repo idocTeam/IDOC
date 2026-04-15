@@ -7,7 +7,7 @@ export const deletePatient = async (req, res) => {
 
     // Forward request to patient-service internal endpoint
     const response = await axios.delete(
-      `${process.env.PATIENT_SERVICE_URL}/api/patients/internal/admin/${patientId}`,
+      `${process.env.PATIENT_SERVICE_URL}/auth/internal/admin/${patientId}`,
       {
         headers: {
           "x-internal-service-key": process.env.INTERNAL_SERVICE_SECRET

@@ -38,10 +38,10 @@ export const generateTicket = async (req, res) => {
     // We'll need patient name too. Let's assume we get it from patient-service
     let patientName = "Patient";
     try {
-        const patientResponse = await axios.get(`${process.env.PATIENT_SERVICE_URL}/patients/${payment.patientId}`);
-        patientName = patientResponse.data.patient.name;
+        const patientResponse = await axios.get(`${process.env.PATIENT_SERVICE_URL}/auth/${payment.patientId}`);
+        patientName = patientResponse.data.patient.fullName;
     } catch (err) {
-        console.error("Failed to fetch patient name");
+        console.error("Failed to fetch patient name from:", `${process.env.PATIENT_SERVICE_URL}/auth/${payment.patientId}`);
     }
 
     // 5. Create ETicket

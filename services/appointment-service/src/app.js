@@ -8,6 +8,6 @@ const app = express();
 app.use(express.json());
 
 // attach routes
-app.use("/api/appointments", appointmentRoutes);
+app.use("/", appointmentRoutes);
 
 export default app;

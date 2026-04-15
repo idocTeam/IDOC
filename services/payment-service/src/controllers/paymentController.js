@@ -125,7 +125,7 @@ export const handleWebhook = async (req, res) => {
       // Here we use an internal system token or bypass auth if possible, or just call with a dummy token
       // For simplicity, let's assume we have a system-level communication method
       try {
-        await axios.patch(`${process.env.APPOINTMENT_SERVICE_URL}/appointments/${appointmentId}/mark-paid`, {
+        await axios.patch(`${process.env.APPOINTMENT_SERVICE_URL}/${appointmentId}/mark-paid`, {
           amountPaid: payment.amount
         });
 
@@ -139,8 +139,14 @@ export const handleWebhook = async (req, res) => {
             startTime: payment.metadata.startTime
           });
         }
+
+        // 4. Generate E-Ticket automatically
+        // Note: In a real scenario, this would be triggered by a message queue
+        // We call our internal function to ensure the ticket is ready
+        await axios.post(`http://localhost:${process.env.PORT}/generate-ticket/${appointmentId}`);
+
       } catch (err) {
-        console.error("Failed to update appointment or trigger telemedicine:", err.message);
+        console.error("Failed to update appointment, trigger telemedicine, or generate ticket:", err.message);
       }
     }
   }
