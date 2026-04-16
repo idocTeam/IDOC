@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, AlertCircle, Loader2, User } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Mail, Lock, ArrowRight, AlertCircle, Loader2, User, CheckCircle } from 'lucide-react';
 import AuthLayout from '../components/layout/AuthLayout';
 import { patientService, doctorService } from '../services';
 
@@ -10,12 +10,23 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.message) {
+      setSuccessMessage(location.state.message);
+      // Clear state so message doesn't persist on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setSuccessMessage('');
 
     try {
       const service = role === 'patient' ? patientService : doctorService;
@@ -44,7 +55,11 @@ const Login = () => {
       {/* Role Switcher */}
       <div className="flex p-1 bg-slate-100 rounded-2xl mb-8">
         <button
-          onClick={() => setRole('patient')}
+          onClick={() => {
+            setRole('patient');
+            setError('');
+            setSuccessMessage('');
+          }}
           className={`flex-1 flex items-center justify-center space-x-2 py-3 rounded-xl text-sm font-bold transition-all ${
             role === 'patient' ? 'bg-white text-primary-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
           }`}
@@ -53,7 +68,11 @@ const Login = () => {
           <span>Patient</span>
         </button>
         <button
-          onClick={() => setRole('doctor')}
+          onClick={() => {
+            setRole('doctor');
+            setError('');
+            setSuccessMessage('');
+          }}
           className={`flex-1 flex items-center justify-center space-x-2 py-3 rounded-xl text-sm font-bold transition-all ${
             role === 'doctor' ? 'bg-white text-primary-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
           }`}
@@ -64,6 +83,13 @@ const Login = () => {
       </div>
 
       <form onSubmit={handleLogin} className="space-y-6">
+        {successMessage && (
+          <div className="p-4 bg-green-50 border border-green-100 text-green-600 text-sm rounded-2xl flex items-center space-x-3">
+            <CheckCircle className="w-5 h-5 shrink-0" />
+            <p>{successMessage}</p>
+          </div>
+        )}
+
         {error && (
           <div className="p-4 bg-red-50 border border-red-100 text-red-600 text-sm rounded-2xl flex items-center space-x-3">
             <AlertCircle className="w-5 h-5 shrink-0" />

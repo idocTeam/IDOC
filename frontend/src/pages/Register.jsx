@@ -57,8 +57,31 @@ const Register = () => {
         delete submissionData.medicalLicenseNumber;
       }
 
-      await service.register(submissionData);
-      navigate('/login', { state: { message: 'Registration successful! Please login.' } });
+      const { data } = await service.register(submissionData);
+      
+      if (role === 'patient') {
+        // Auto-login for patients
+        const loginRes = await patientService.login({ 
+          email: formData.email, 
+          pw: formData.pw 
+        });
+        
+        localStorage.setItem('token', loginRes.data.token);
+        localStorage.setItem('user', JSON.stringify({ 
+          ...loginRes.data.patient, 
+          role: 'patient', 
+          name: loginRes.data.patient.fullName 
+        }));
+        
+        navigate('/dashboard');
+      } else {
+        // Doctors need approval
+        navigate('/login', { 
+          state: { 
+            message: 'Registration successful! Your account is pending admin approval. You can login once approved.' 
+          } 
+        });
+      }
     } catch (err) {
       setError(err.response?.data?.message || err.response?.data?.error || 'Registration failed. Please try again.');
     } finally {

@@ -12,7 +12,9 @@ import {
   LayoutDashboard,
   LogOut,
   Stethoscope,
-  ClipboardList
+  ClipboardList,
+  Eye,
+  X
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -24,6 +26,7 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedDoctor, setSelectedDoctor] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -38,8 +41,10 @@ const AdminDashboard = () => {
         adminService.getApprovedDoctors(),
         adminService.getAllPatients()
       ]);
-      setPendingDoctors(pendingRes.data.doctors || []);
-      setApprovedDoctors(approvedRes.data.doctors || []);
+      
+      // Fixed data extraction: admin-service returns { message, data: { doctors } }
+      setPendingDoctors(pendingRes.data.data?.doctors || []);
+      setApprovedDoctors(approvedRes.data.data?.doctors || []);
       setPatients(patientsRes.data.patients || []);
     } catch (err) {
       setError('Failed to fetch dashboard data');
@@ -53,6 +58,7 @@ const AdminDashboard = () => {
     try {
       await adminService.approveDoctor(id);
       fetchData();
+      setSelectedDoctor(null);
     } catch (err) {
       alert('Failed to approve doctor');
     }
@@ -64,6 +70,7 @@ const AdminDashboard = () => {
     try {
       await adminService.rejectDoctor(id, reason);
       fetchData();
+      setSelectedDoctor(null);
     } catch (err) {
       alert('Failed to reject doctor');
     }
@@ -136,7 +143,7 @@ const AdminDashboard = () => {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 cursor-pointer hover:border-primary-200 transition-all" onClick={() => setActiveTab('pendingDoctors')}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Pending Doctors</p>
@@ -147,7 +154,7 @@ const AdminDashboard = () => {
               </div>
             </div>
           </div>
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 cursor-pointer hover:border-primary-200 transition-all" onClick={() => setActiveTab('approvedDoctors')}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Approved Doctors</p>
@@ -158,7 +165,7 @@ const AdminDashboard = () => {
               </div>
             </div>
           </div>
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 cursor-pointer hover:border-primary-200 transition-all" onClick={() => setActiveTab('patients')}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Total Patients</p>
@@ -266,6 +273,15 @@ const AdminDashboard = () => {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
+                        {activeTab !== 'patients' && (
+                          <button 
+                            onClick={() => setSelectedDoctor(item)}
+                            className="p-2 text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                            title="View Details"
+                          >
+                            <Eye className="w-5 h-5" />
+                          </button>
+                        )}
                         {activeTab === 'pendingDoctors' && (
                           <>
                             <button 
@@ -306,8 +322,120 @@ const AdminDashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Doctor Details Modal */}
+      {selectedDoctor && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+            <div className="flex items-center justify-between p-6 border-b border-slate-100">
+              <h2 className="text-xl font-bold text-slate-900">Doctor Details</h2>
+              <button onClick={() => setSelectedDoctor(null)} className="p-2 hover:bg-slate-100 rounded-xl transition-colors">
+                <X className="w-5 h-5 text-slate-500" />
+              </button>
+            </div>
+            
+            <div className="p-8 max-h-[70vh] overflow-y-auto">
+              <div className="flex flex-col md:flex-row gap-8 mb-8">
+                <div className="w-24 h-24 bg-primary-100 rounded-3xl flex items-center justify-center text-primary-600 text-3xl font-black shrink-0">
+                  {selectedDoctor.fullName[0]}
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-2xl font-black text-slate-900">{selectedDoctor.fullName}</h3>
+                    <p className="text-primary-600 font-bold">{selectedDoctor.specialty}</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Email</p>
+                      <p className="text-sm font-bold text-slate-700">{selectedDoctor.email}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Phone</p>
+                      <p className="text-sm font-bold text-slate-700">{selectedDoctor.phone}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Hospital</p>
+                    <p className="text-sm font-bold text-slate-700">{selectedDoctor.hospital}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Qualifications</p>
+                    <p className="text-sm font-bold text-slate-700">{selectedDoctor.qualifications}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Experience</p>
+                    <p className="text-sm font-bold text-slate-700">{selectedDoctor.experienceYears} Years</p>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">License Number</p>
+                    <p className="text-sm font-bold text-slate-700">{selectedDoctor.medicalLicenseNumber}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Consultation Fee</p>
+                    <p className="text-sm font-bold text-slate-700">${selectedDoctor.consultationFee}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Status</p>
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                      selectedDoctor.approvalStatus === 'approved' 
+                      ? 'bg-green-50 text-green-600' 
+                      : selectedDoctor.approvalStatus === 'rejected' 
+                        ? 'bg-red-50 text-red-600'
+                        : 'bg-amber-50 text-amber-600'
+                    }`}>
+                      {selectedDoctor.approvalStatus}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Biography</p>
+                <p className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-4 rounded-2xl border border-slate-100 italic">
+                  "{selectedDoctor.bio}"
+                </p>
+              </div>
+            </div>
+
+            <div className="p-6 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
+              <button 
+                onClick={() => setSelectedDoctor(null)}
+                className="px-6 py-2.5 text-sm font-bold text-slate-600 hover:text-slate-900 transition-colors"
+              >
+                Close
+              </button>
+              {selectedDoctor.approvalStatus === 'pending' && (
+                <>
+                  <button 
+                    onClick={() => handleReject(selectedDoctor._id)}
+                    className="px-6 py-2.5 bg-red-50 text-red-600 rounded-xl text-sm font-bold hover:bg-red-100 transition-all flex items-center gap-2"
+                  >
+                    <XCircle className="w-4 h-4" />
+                    Reject
+                  </button>
+                  <button 
+                    onClick={() => handleApprove(selectedDoctor._id)}
+                    className="px-6 py-2.5 bg-green-600 text-white rounded-xl text-sm font-bold hover:bg-green-700 transition-all flex items-center gap-2 shadow-lg shadow-green-200"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    Approve Doctor
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 export default AdminDashboard;
+
