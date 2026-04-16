@@ -13,6 +13,20 @@ import Profile from './pages/Profile';
 import Reports from './pages/Reports';
 import TicketDetails from './pages/TicketDetails';
 import AISymptomChecker from './pages/AISymptomChecker';
+import AdminLogin from './pages/AdminLogin';
+import AdminDashboard from './pages/AdminDashboard';
+import { Navigate } from 'react-router-dom';
+
+const AdminProtectedRoute = ({ children }) => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  const token = localStorage.getItem('token');
+  
+  if (!token || user?.role !== 'admin') {
+    return <Navigate to="/admin" replace />;
+  }
+  
+  return children;
+};
 
 function App() {
   return (
@@ -34,6 +48,17 @@ function App() {
             <Route path="/ai-symptom-checker" element={<AISymptomChecker />} />
             <Route path="/contact" element={<div className="pt-32 text-center"><h1 className="text-3xl font-bold">Contact Us</h1></div>} />
             <Route path="/specialties" element={<div className="pt-32 text-center"><h1 className="text-3xl font-bold">Medical Specialties</h1></div>} />
+            
+            {/* Admin Routes */}
+            <Route path="/admin" element={<AdminLogin />} />
+            <Route 
+              path="/admin/dashboard" 
+              element={
+                <AdminProtectedRoute>
+                  <AdminDashboard />
+                </AdminProtectedRoute>
+              } 
+            />
           </Routes>
         </main>
         <Footer />

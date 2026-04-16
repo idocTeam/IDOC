@@ -20,12 +20,15 @@ const Navbar = () => {
   }, []);
 
   const handleLogout = () => {
+    const isAdmin = user?.role === 'admin';
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    navigate('/login');
+    navigate(isAdmin ? '/admin' : '/login');
   };
 
-  const navLinks = [
+  const navLinks = user?.role === 'admin' ? [
+    { name: 'Dashboard', path: '/admin/dashboard' },
+  ] : [
     { name: 'Find Doctors', path: '/doctors' },
     { name: 'Specialties', path: '/specialties' },
     { name: 'AI Checker', path: '/ai-symptom-checker' },

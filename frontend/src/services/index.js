@@ -33,3 +33,14 @@ export const paymentService = {
 export const telemedicineService = {
   getSession: (appointmentId) => api.get(`/telemedicine/sessions/appointment/${appointmentId}`),
 };
+
+export const adminService = {
+  login: (credentials) => api.post('/admin/auth/login', credentials),
+  getPendingDoctors: () => api.get('/admin/doctors/pending'),
+  getApprovedDoctors: () => api.get('/admin/doctors/approved'),
+  approveDoctor: (id) => api.patch(`/admin/doctors/${id}/approve`),
+  rejectDoctor: (id, reason) => api.patch(`/admin/doctors/${id}/reject`, { rejectionReason: reason }),
+  deleteDoctor: (id) => api.delete(`/admin/doctors/${id}`),
+  getAllPatients: () => api.get('/admin/patients'),
+  deletePatient: (id) => api.delete(`/admin/patients/${id}`),
+};
