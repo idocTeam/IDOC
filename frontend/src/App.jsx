@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import Home from './pages/Home';
@@ -32,6 +32,15 @@ const AdminProtectedRoute = ({ children }) => {
   return children;
 };
 
+const NotFound = () => (
+  <div className="pt-32 pb-20 min-h-screen bg-slate-50 px-4">
+    <div className="max-w-2xl mx-auto card p-10 text-center space-y-4">
+      <h1 className="text-3xl font-bold text-slate-900">Page not found</h1>
+      <p className="text-slate-500">The page you requested does not exist.</p>
+    </div>
+  </div>
+);
+
 function App() {
   return (
     <Router>
@@ -43,6 +52,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/doctors" element={<DoctorList />} />
+
             <Route
               path="/book/:id"
               element={
@@ -51,6 +61,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
             <Route
               path="/dashboard"
               element={
@@ -59,6 +70,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
             <Route
               path="/telemedicine"
               element={
@@ -67,6 +79,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
             <Route
               path="/profile"
               element={
@@ -75,6 +88,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
             <Route
               path="/doctor-profile"
               element={
@@ -83,6 +97,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
             <Route
               path="/reports"
               element={
@@ -91,6 +106,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
             <Route
               path="/ticket/:appointmentId"
               element={
@@ -99,6 +115,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
             <Route
               path="/appointment/:id"
               element={
@@ -107,8 +124,10 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
             <Route path="/payment-success" element={<PaymentStatus variant="success" />} />
-            <Route path="/payment-cancel" element={<PaymentStatus variant="cancel" />} />
+            <Route path="/payment-cancel" element={<PaymentStatus variant="cancelled" />} />
+
             <Route path="/ai-symptom-checker" element={<AISymptomChecker />} />
             <Route path="/contact" element={<div className="pt-32 text-center"><h1 className="text-3xl font-bold">Contact Us</h1></div>} />
             <Route path="/specialties" element={<div className="pt-32 text-center"><h1 className="text-3xl font-bold">Medical Specialties</h1></div>} />
@@ -122,6 +141,8 @@ function App() {
                 </AdminProtectedRoute>
               }
             />
+
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
         <Footer />

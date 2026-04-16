@@ -85,7 +85,7 @@ services:
       - ./services/appointment-service/.env
     environment:
       PORT: 5007
-      MONGO_URI: mongodb://idoc-mongodb:27017/idoc_appointment
+      #MONGO_URI: mongodb://idoc-mongodb:27017/idoc_appointment
       DOCTOR_SERVICE_URL: http://doctor-service:5002
     depends_on:
       - mongodb
@@ -101,10 +101,11 @@ services:
       - ./services/payment-service/.env
     environment:
       PORT: 5005
-      MONGO_URI: mongodb://idoc-mongodb:27017/idoc_payment
+      #MONGO_URI: mongodb://idoc-mongodb:27017/idoc_payment
       APPOINTMENT_SERVICE_URL: http://appointment-service:5007
       TELEMEDICINE_SERVICE_URL: http://telemedicine-service:5006
       PATIENT_SERVICE_URL: http://patient-service:5003
+      PAYMENT_SERVICE_URL: http://payment-service:5005
     depends_on:
       - appointment-service
       - mongodb
@@ -120,7 +121,7 @@ services:
       - ./services/telemedicine-service/.env
     environment:
       PORT: 5006
-      MONGO_URI: mongodb://idoc-mongodb:27017/idoc_telemedicine
+      #MONGO_URI: mongodb://idoc-mongodb:27017/idoc_telemedicine
     depends_on:
       - mongodb
     restart: unless-stopped

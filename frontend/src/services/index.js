@@ -71,6 +71,10 @@ export const appointmentService = {
 
 export const paymentService = {
   createCheckoutSession: (appointmentId) => api.post('/payments/create-checkout-session', { appointmentId }),
+  verifyPayment: (sessionId, appointmentId) =>
+    api.get('/payments/verify-payment', {
+      params: { session_id: sessionId, appointmentId }
+    }),
   getTicket: (appointmentId) => api.get(`/payments/ticket/${appointmentId}`),
 };
 

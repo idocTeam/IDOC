@@ -65,6 +65,8 @@ export const markAppointmentPaid = async (appointmentId, amountPaid) => {
   appointment.amountPaid = amountPaid;
   await appointment.save();
 
+  console.log(`Appointment saved successfully: ${appointment._id} for patient ${patientId}`);
+
   return appointment;
 };
 
@@ -120,7 +122,8 @@ export const createAppointment = async (data, user) => {
     startTime,
     endTime,
     consultationType,
-    reason
+    reason,
+    patientName
   } = data;
 
   const patientId = getAuthenticatedPatientId(user);
@@ -198,7 +201,8 @@ export const createAppointment = async (data, user) => {
     reason,
     status: "pending",
     doctorName: doctor.fullName,
-    doctorSpecialty: doctor.specialty
+    doctorSpecialty: doctor.specialty,
+    patientName: patientName || ""
   });
 
   await appointment.save();
