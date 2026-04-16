@@ -37,6 +37,12 @@ const slotSchema = new mongoose.Schema(
     isAvailable: {
       type: Boolean,
       default: true
+    },
+    slotDurationMinutes: {
+      type: Number,
+      required: true,
+      default: 20,
+      enum: [10, 15, 20, 30, 45, 60]
     }
   },
   { timestamps: true }

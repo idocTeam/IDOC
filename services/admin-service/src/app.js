@@ -21,8 +21,8 @@ app.get("/", (req, res) => {
 });
 
 // Routes
-app.use("/api/admin/auth", adminAuthRoutes);
-app.use("/api/admin/doctors", adminDoctorRoutes);
-app.use("/api/admin/patients", adminPatientRoutes);
+app.use("/auth", adminAuthRoutes);
+app.use("/doctors", adminDoctorRoutes);
+app.use("/patients", adminPatientRoutes);
 
 export default app;

@@ -26,11 +26,11 @@ app.get("/", (req, res) => {
 });
 
 // API routes
-app.use("/api/doctors/auth", doctorAuthRoutes);
-app.use("/api/doctors/profile", doctorProfileRoutes);
-app.use("/api/doctors/availability", availabilityRoutes);
-app.use("/api/doctors/prescriptions", prescriptionRoutes);
-app.use("/api/doctors/integrations", doctorIntegrationRoutes);
+app.use("/auth", doctorAuthRoutes);
+app.use("/profile", doctorProfileRoutes);
+app.use("/availability", availabilityRoutes);
+app.use("/prescriptions", prescriptionRoutes);
+app.use("/integrations", doctorIntegrationRoutes);
 
 // 404 handler
 app.use((req, res) => {

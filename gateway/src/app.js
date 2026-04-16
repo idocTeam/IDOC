@@ -25,10 +25,7 @@ app.use(
       // Allow Postman / curl / server-to-server calls
       if (!origin) return callback(null, true);
 
-      if (
-        allowedOrigins.includes("*") ||
-        allowedOrigins.includes(origin)
-      ) {
+      if (allowedOrigins.includes("*") || allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
 
@@ -49,51 +46,206 @@ app.get("/", (_req, res) => {
       admin: "/api/admin",
       doctors: "/api/doctors",
       patients: "/api/patients",
+      appointments: "/api/appointments",
+      payments: "/api/payments",
+      telemedicine: "/api/telemedicine",
+      availability: "/api/availability",
+      prescriptions: "/api/prescriptions",
+      integrations: "/api/integrations",
       uploads: "/uploads"
     }
   });
 });
 
-// Reusable proxy builder
-const buildProxy = (target, serviceName) =>
-  createProxyMiddleware({
-    target,
-    changeOrigin: true,
-    xfwd: true,
-    proxyTimeout: 60000,
-    timeout: 60000,
-    onError: (err, _req, res) => {
-      if (!res.headersSent) {
-        res.status(502).json({
-          message: `${serviceName} is unavailable through gateway`,
-          error: err.message
-        });
-      }
-    }
-  });
+// small helper to fail fast if env missing
+const requireEnv = (name) => {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+  return value;
+};
+
+const ADMIN_SERVICE_URL = requireEnv("ADMIN_SERVICE_URL");
+const DOCTOR_SERVICE_URL = requireEnv("DOCTOR_SERVICE_URL");
+const PATIENT_SERVICE_URL = requireEnv("PATIENT_SERVICE_URL");
+const APPOINTMENT_SERVICE_URL = requireEnv("APPOINTMENT_SERVICE_URL");
+const PAYMENT_SERVICE_URL = requireEnv("PAYMENT_SERVICE_URL");
+const TELEMEDICINE_SERVICE_URL = requireEnv("TELEMEDICINE_SERVICE_URL");
 
 // Admin routes
 app.use(
   "/api/admin",
-  buildProxy(process.env.ADMIN_SERVICE_URL, "admin-service")
+  createProxyMiddleware({
+    target: ADMIN_SERVICE_URL,
+    changeOrigin: true,
+    pathRewrite: { "^/api/admin": "" },
+    on: {
+      error: (err, req, res) => {
+        res.status(502).json({
+          message: "admin-service unavailable",
+          error: err.message
+        });
+      }
+    }
+  })
 );
 
 // Doctor routes
 app.use(
   "/api/doctors",
-  buildProxy(process.env.DOCTOR_SERVICE_URL, "doctor-service")
+  createProxyMiddleware({
+    target: DOCTOR_SERVICE_URL,
+    changeOrigin: true,
+    pathRewrite: { "^/api/doctors": "" },
+    on: {
+      error: (err, req, res) => {
+        res.status(502).json({
+          message: "doctor-service unavailable",
+          error: err.message
+        });
+      }
+    }
+  })
+);
+
+// Availability routes (part of doctor service)
+app.use(
+  "/api/availability",
+  createProxyMiddleware({
+    target: `${DOCTOR_SERVICE_URL}/availability`,
+    changeOrigin: true,
+    on: {
+      error: (err, req, res) => {
+        res.status(502).json({
+          message: "availability service unavailable",
+          error: err.message
+        });
+      }
+    }
+  })
+);
+
+// Prescription routes (part of doctor service)
+app.use(
+  "/api/prescriptions",
+  createProxyMiddleware({
+    target: `${DOCTOR_SERVICE_URL}/prescriptions`,
+    changeOrigin: true,
+    on: {
+      error: (err, req, res) => {
+        res.status(502).json({
+          message: "prescription service unavailable",
+          error: err.message
+        });
+      }
+    }
+  })
+);
+
+app.use(
+  "/api/integrations",
+  createProxyMiddleware({
+    target: `${DOCTOR_SERVICE_URL}/integrations`,
+    changeOrigin: true,
+    on: {
+      error: (err, req, res) => {
+        res.status(502).json({
+          message: "integration service unavailable",
+          error: err.message
+        });
+      }
+    }
+  })
 );
 
 // Patient routes
 app.use(
   "/api/patients",
-  buildProxy(process.env.PATIENT_SERVICE_URL, "patient-service")
+  createProxyMiddleware({
+    target: PATIENT_SERVICE_URL,
+    changeOrigin: true,
+    pathRewrite: { "^/api/patients": "" },
+    on: {
+      error: (err, req, res) => {
+        res.status(502).json({
+          message: "patient-service unavailable",
+          error: err.message
+        });
+      }
+    }
+  })
+);
+
+// Appointment routes
+app.use(
+  "/api/appointments",
+  createProxyMiddleware({
+    target: APPOINTMENT_SERVICE_URL,
+    changeOrigin: true,
+    pathRewrite: { "^/api/appointments": "" },
+    on: {
+      error: (err, req, res) => {
+        res.status(502).json({
+          message: "appointment-service unavailable",
+          error: err.message
+        });
+      }
+    }
+  })
+);
+
+// Payment routes
+app.use(
+  "/api/payments",
+  createProxyMiddleware({
+    target: PAYMENT_SERVICE_URL,
+    changeOrigin: true,
+    pathRewrite: { "^/api/payments": "" },
+    on: {
+      error: (err, req, res) => {
+        res.status(502).json({
+          message: "payment-service unavailable",
+          error: err.message
+        });
+      }
+    }
+  })
+);
+
+// Telemedicine routes
+app.use(
+  "/api/telemedicine",
+  createProxyMiddleware({
+    target: TELEMEDICINE_SERVICE_URL,
+    changeOrigin: true,
+    pathRewrite: { "^/api/telemedicine": "" },
+    on: {
+      error: (err, req, res) => {
+        res.status(502).json({
+          message: "telemedicine-service unavailable",
+          error: err.message
+        });
+      }
+    }
+  })
 );
 
 // Uploaded files from patient-service
 app.use(
   "/uploads",
-  buildProxy(process.env.PATIENT_SERVICE_URL, "patient-service uploads")
+  createProxyMiddleware({
+    target: PATIENT_SERVICE_URL,
+    changeOrigin: true,
+    on: {
+      error: (err, req, res) => {
+        res.status(502).json({
+          message: "patient-service uploads unavailable",
+          error: err.message
+        });
+      }
+    }
+  })
 );
 
 // 404 fallback

@@ -6,7 +6,7 @@ export const getPendingDoctors = async (req, res) => {
     const { page = 1, limit = 10 } = req.query;
 
     const response = await axios.get(
-      `${process.env.DOCTOR_SERVICE_URL}/api/doctors/profile/admin/pending`,
+      `${process.env.DOCTOR_SERVICE_URL}/profile/admin/pending`,
       {
         params: { page, limit }
       }
@@ -30,7 +30,7 @@ export const getApprovedDoctors = async (req, res) => {
     const { page = 1, limit = 10 } = req.query;
 
     const response = await axios.get(
-      `${process.env.DOCTOR_SERVICE_URL}/api/doctors/profile/admin/approved`,
+      `${process.env.DOCTOR_SERVICE_URL}/profile/admin/approved`,
       {
         params: { page, limit }
       }
@@ -54,7 +54,7 @@ export const approveDoctor = async (req, res) => {
     const { doctorId } = req.params;
 
     const response = await axios.patch(
-      `${process.env.DOCTOR_SERVICE_URL}/api/doctors/profile/admin/${doctorId}/approve`
+      `${process.env.DOCTOR_SERVICE_URL}/profile/admin/${doctorId}/approve`
     );
 
     return res.status(200).json({
@@ -82,7 +82,7 @@ export const rejectDoctor = async (req, res) => {
     }
 
     const response = await axios.patch(
-      `${process.env.DOCTOR_SERVICE_URL}/api/doctors/profile/admin/${doctorId}/reject`,
+      `${process.env.DOCTOR_SERVICE_URL}/profile/admin/${doctorId}/reject`,
       { rejectionReason }
     );
 
