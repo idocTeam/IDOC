@@ -13,7 +13,7 @@ import {
   Stethoscope,
   Activity
 } from 'lucide-react';
-import { appointmentService } from '../services';
+import { appointmentService, doctorService } from '../services';
 
 const Booking = () => {
   const { id } = useParams();

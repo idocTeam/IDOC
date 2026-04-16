@@ -124,6 +124,9 @@ const Navbar = () => {
               </div>
             ) : (
               <div className="flex items-center space-x-3">
+                <Link to="/admin" className="px-3 py-2.5 text-xs font-bold text-slate-500 hover:text-primary-600 transition-colors border border-slate-200 rounded-lg">
+                  Admin
+                </Link>
                 <Link to="/login" className="px-5 py-2.5 text-sm font-bold text-slate-700 hover:text-primary-600 transition-colors">
                   Log In
                 </Link>
@@ -173,6 +176,7 @@ const Navbar = () => {
                 </div>
               ) : (
                 <div className="pt-6 space-y-3">
+                  <Link to="/admin" className="btn btn-secondary w-full" onClick={() => setIsOpen(false)}>Admin Portal</Link>
                   <Link to="/login" className="btn btn-secondary w-full" onClick={() => setIsOpen(false)}>Log In</Link>
                   <Link to="/register" className="btn btn-primary w-full" onClick={() => setIsOpen(false)}>Sign Up</Link>
                 </div>
