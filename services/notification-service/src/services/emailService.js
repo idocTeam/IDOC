@@ -14,8 +14,11 @@ const transporter = nodemailer.createTransport({
 
 export const sendEmail = async ({ to, subject, text, html }) => {
   if (!to) {
+    console.error("Recipient email is required for sending email");
     throw new Error("Recipient email is required");
   }
+
+  console.log(`Attempting to send email to: ${to} with subject: ${subject}`);
 
   const mailOptions = {
     from: process.env.EMAIL_FROM,
@@ -25,10 +28,15 @@ export const sendEmail = async ({ to, subject, text, html }) => {
     html
   };
 
-  const info = await transporter.sendMail(mailOptions);
-
-  return {
-    messageId: info.messageId,
-    response: info.response
-  };
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`Email sent successfully: ${info.messageId}`);
+    return {
+      messageId: info.messageId,
+      response: info.response
+    };
+  } catch (error) {
+    console.error(`Failed to send email to ${to}:`, error.message);
+    throw error;
+  }
 };
