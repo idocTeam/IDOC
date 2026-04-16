@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, AlertCircle, Loader2, User, CheckCircle } from 'lucide-react';
 import AuthLayout from '../components/layout/AuthLayout';
 import { patientService, doctorService } from '../services';
+import { saveAuthSession } from '../utils/session';
 
 const Login = () => {
   const [role, setRole] = useState('patient');
@@ -32,13 +33,12 @@ const Login = () => {
       const service = role === 'patient' ? patientService : doctorService;
       const { data } = await service.login({ email, pw: password });
       
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify({ 
-        ...data[role], 
-        role, 
-        name: data[role].fullName 
-      }));
-      
+      saveAuthSession({
+        token: data.token,
+        user: data[role],
+        role,
+      });
+
       navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed. Please check your credentials.');

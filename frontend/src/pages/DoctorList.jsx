@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Search, MapPin, Star, Clock, Filter, ChevronRight, Stethoscope } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -11,7 +11,7 @@ const DoctorList = () => {
   const [specialty, setSpecialty] = useState('');
 
   const specialties = [
-    'Cardiology', 'Dermatology', 'Neurology', 'Pediatrics', 
+    'Cardiology', 'Dermatology', 'Neurology', 'Pediatrics',
     'Psychiatry', 'General Medicine', 'Orthopedics'
   ];
 
@@ -22,28 +22,34 @@ const DoctorList = () => {
   const fetchDoctors = async () => {
     setLoading(true);
     try {
-      const { data } = await doctorService.getAll({ specialty });
+      const { data } = await doctorService.getAll({ specialty, limit: 50 });
       setDoctors(data.doctors || []);
     } catch (err) {
       console.error('Failed to fetch doctors', err);
+      setDoctors([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredDoctors = doctors.filter(doctor => {
-    const name = doctor.fullName || '';
-    const specialty = doctor.specialty || '';
-    const search = searchTerm.toLowerCase();
-    
-    return name.toLowerCase().includes(search) ||
-           specialty.toLowerCase().includes(search);
-  });
+  const filteredDoctors = useMemo(() => {
+    const search = searchTerm.trim().toLowerCase();
+    if (!search) return doctors;
+
+    return doctors.filter((doctor) => {
+      const fullName = doctor.fullName || '';
+      const doctorSpecialty = doctor.specialty || '';
+      const hospital = doctor.hospital || '';
+
+      return [fullName, doctorSpecialty, hospital].some((value) =>
+        value.toLowerCase().includes(search)
+      );
+    });
+  }, [doctors, searchTerm]);
 
   return (
     <div className="pt-32 pb-20 min-h-screen bg-slate-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header & Search */}
         <div className="mb-12 space-y-8">
           <div>
             <h1 className="text-4xl font-bold text-slate-900 tracking-tight">Find Your Specialist</h1>
@@ -56,7 +62,7 @@ const DoctorList = () => {
               <input
                 type="text"
                 className="input pl-12 h-14"
-                placeholder="Search by name, specialty, or condition..."
+                placeholder="Search by name, specialty, or hospital..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -69,14 +75,13 @@ const DoctorList = () => {
                 onChange={(e) => setSpecialty(e.target.value)}
               >
                 <option value="">All Specialties</option>
-                {specialties.map(s => <option key={s} value={s}>{s}</option>)}
+                {specialties.map((item) => <option key={item} value={item}>{item}</option>)}
               </select>
             </div>
-            <button className="btn btn-primary h-14">Search Now</button>
+            <button onClick={fetchDoctors} className="btn btn-primary h-14">Refresh Doctors</button>
           </div>
         </div>
 
-        {/* Results */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {loading ? (
             [1, 2, 3].map(i => (
@@ -111,7 +116,7 @@ const DoctorList = () => {
                     <div className="flex items-center space-x-1 mt-1">
                       <Star className="w-4 h-4 text-yellow-400 fill-current" />
                       <span className="text-sm font-bold text-slate-700">4.9</span>
-                      <span className="text-xs text-slate-400 font-medium">(120 reviews)</span>
+                      <span className="text-xs text-slate-400 font-medium">(Approved specialist)</span>
                     </div>
                   </div>
                 </div>
@@ -123,7 +128,7 @@ const DoctorList = () => {
                   </div>
                   <div className="flex items-center text-slate-500 space-x-2">
                     <Clock className="w-4 h-4" />
-                    <span className="text-sm font-medium text-green-600">Available Today</span>
+                    <span className="text-sm font-medium text-green-600">Available via live schedule</span>
                   </div>
                 </div>
 
@@ -132,8 +137,8 @@ const DoctorList = () => {
                     <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Consultation</p>
                     <p className="text-lg font-bold text-slate-900">${doctor.consultationFee}</p>
                   </div>
-                  <Link 
-                    to={`/book/${doctor._id}`} 
+                  <Link
+                    to={`/book/${doctor._id}`}
                     className="btn btn-primary !py-2.5 !px-6 text-sm flex items-center space-x-2"
                   >
                     <span>Book Now</span>
@@ -149,8 +154,8 @@ const DoctorList = () => {
               </div>
               <h3 className="text-2xl font-bold text-slate-900">No Doctors Found</h3>
               <p className="text-slate-500 mt-2">Try adjusting your search or specialty filters.</p>
-              <button 
-                onClick={() => {setSearchTerm(''); setSpecialty('');}}
+              <button
+                onClick={() => { setSearchTerm(''); setSpecialty(''); fetchDoctors(); }}
                 className="mt-6 text-primary-600 font-bold hover:underline"
               >
                 Clear all filters

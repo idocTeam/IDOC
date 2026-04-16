@@ -1,20 +1,48 @@
-import api from './api';
+import api, { apiOrigin } from './api';
+
+export { apiOrigin };
 
 export const patientService = {
   login: (credentials) => api.post('/patients/auth/login', credentials),
   register: (data) => api.post('/patients/auth/register', data),
   getProfile: () => api.get('/patients/auth/me'),
   updateProfile: (data) => api.put('/patients/auth/me', data),
+  deleteProfile: () => api.delete('/patients/auth/me'),
+  getById: (id) => api.get(`/patients/auth/${id}`),
+
+  getMyReports: () => api.get('/patients/reports/my'),
+  getMyReportById: (reportId) => api.get(`/patients/reports/my/${reportId}`),
+  uploadReport: (formData) => api.post('/patients/reports', formData),
+  updateReport: (reportId, formData) => api.put(`/patients/reports/my/${reportId}`, formData),
+  deleteReport: (reportId) => api.delete(`/patients/reports/my/${reportId}`),
 };
 
 export const doctorService = {
   login: (credentials) => api.post('/doctors/auth/login', credentials),
   register: (data) => api.post('/doctors/auth/register', data),
-  getAll: (params) => api.get('/doctors/profile/approved', { params }),
-  search: (params) => api.get('/doctors/profile/search', { params }),
+  getMyProfile: () => api.get('/doctors/profile/me'),
+  updateMyProfile: (data) => api.put('/doctors/profile/me', data),
   getById: (id) => api.get(`/doctors/profile/${id}`),
-  getAvailability: (id, date) => api.get(`/appointments/doctors/${id}/bookable-slots`, { params: { date } }),
-  // Availability management
+  getPublicById: (id) => api.get(`/doctors/profile/public/${id}`),
+
+  getAll: async (params = {}) => {
+    const { specialty = '', q = '', ...rest } = params;
+
+    if (q) {
+      return api.get('/doctors/profile/search', {
+        params: { q, ...rest },
+      });
+    }
+
+    if (specialty) {
+      return api.get('/doctors/profile/search/specialty', {
+        params: { specialty, ...rest },
+      });
+    }
+
+    return api.get('/doctors/profile/approved', { params: rest });
+  },
+
   getMyAvailability: () => api.get('/availability/me'),
   updateMyAvailability: (availability) => api.put('/availability/me', { availability }),
   addAvailabilitySlot: (slot) => api.post('/availability/me/slot', slot),
@@ -25,14 +53,19 @@ export const doctorService = {
 
 export const appointmentService = {
   create: (data) => api.post('/appointments/create', data),
-  getPatientAppointments: () => api.get('/appointments/mine'),
-  getDoctorAppointments: () => api.get('/appointments/doctor/me'),
+  getById: (id) => api.get(`/appointments/${id}`),
+  getPatientAppointments: (params) => api.get('/appointments/mine', { params }),
+  getDoctorAppointments: (params) => api.get('/appointments/doctor/me', { params }),
   accept: (id) => api.patch(`/appointments/${id}/accept`),
   reject: (id) => api.patch(`/appointments/${id}/reject`),
-  cancel: (id) => api.patch(`/appointments/${id}/cancel`),
+  cancel: (id, payload = {}) => api.patch(`/appointments/${id}/cancel`, payload),
+  complete: (id) => api.patch(`/appointments/${id}/complete`),
+  reschedule: (id, payload) => api.patch(`/appointments/${id}/reschedule`, payload),
+  acceptDoctorReschedule: (id) => api.patch(`/appointments/${id}/accept-doctor-reschedule`),
+  rejectDoctorReschedule: (id, payload = {}) => api.patch(`/appointments/${id}/reject-doctor-reschedule`, payload),
   getBookableSlots: (doctorId, date, mode) =>
     api.get(`/appointments/doctors/${doctorId}/bookable-slots`, {
-      params: { date, mode }
+      params: { date, mode },
     }),
 };
 
@@ -47,10 +80,10 @@ export const telemedicineService = {
 
 export const adminService = {
   login: (credentials) => api.post('/admin/auth/login', credentials),
-  getPendingDoctors: () => api.get('/admin/doctors/pending'),
-  getApprovedDoctors: () => api.get('/admin/doctors/approved'),
+  getPendingDoctors: (params) => api.get('/admin/doctors/pending', { params }),
+  getApprovedDoctors: (params) => api.get('/admin/doctors/approved', { params }),
   approveDoctor: (id) => api.patch(`/admin/doctors/${id}/approve`),
-  rejectDoctor: (id, reason) => api.patch(`/admin/doctors/${id}/reject`, { rejectionReason: reason }),
+  rejectDoctor: (id, rejectionReason) => api.patch(`/admin/doctors/${id}/reject`, { rejectionReason }),
   deleteDoctor: (id) => api.delete(`/admin/doctors/${id}`),
   getAllPatients: () => api.get('/admin/patients'),
   deletePatient: (id) => api.delete(`/admin/patients/${id}`),

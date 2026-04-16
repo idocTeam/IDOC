@@ -11,11 +11,21 @@ import {
 } from "./slotService.js";
 
 /**
- * Normalize authenticated user id.
- * Some tokens may carry `id`, others `userId`.
+ * Patient identity
+ * In your system patient routes use custom userId first.
  */
-const getAuthenticatedUserId = (user = {}) => {
+const getAuthenticatedPatientId = (user = {}) => {
   return String(user.userId || user.id || user._id || "");
+};
+
+/**
+ * Doctor identity
+ * IMPORTANT:
+ * Doctor appointments are stored using Doctor Mongo _id,
+ * so doctor-side appointment logic must prefer `id` first.
+ */
+const getAuthenticatedDoctorId = (user = {}) => {
+  return String(user.id || user.userId || user._id || "");
 };
 
 /**
@@ -57,6 +67,10 @@ export const markAppointmentPaid = async (appointmentId, amountPaid) => {
 
   return appointment;
 };
+
+/**
+ * Get bookable slots for a doctor
+ */
 export const getBookableSlotsForDoctor = async ({
   doctorId,
   date,
@@ -97,7 +111,7 @@ export const getBookableSlotsForDoctor = async ({
 };
 
 /**
- * Create Appointment
+ * Create appointment
  */
 export const createAppointment = async (data, user) => {
   const {
@@ -109,7 +123,7 @@ export const createAppointment = async (data, user) => {
     reason
   } = data;
 
-  const patientId = getAuthenticatedUserId(user);
+  const patientId = getAuthenticatedPatientId(user);
 
   if (!patientId) {
     throw new Error("Unauthorized");
@@ -203,7 +217,14 @@ export const getAppointmentById = async (appointmentId, user) => {
     throw new Error("Appointment not found");
   }
 
-  const requesterId = getAuthenticatedUserId(user);
+  if (!user?.role) {
+    throw new Error("Unauthorized");
+  }
+
+  const requesterId =
+    user.role === "doctor"
+      ? getAuthenticatedDoctorId(user)
+      : getAuthenticatedPatientId(user);
 
   if (!requesterId) {
     throw new Error("Unauthorized");
@@ -223,7 +244,7 @@ export const getAppointmentById = async (appointmentId, user) => {
  * Get all appointments for authenticated patient
  */
 export const getPatientAppointments = async (user, filters = {}) => {
-  const patientId = getAuthenticatedUserId(user);
+  const patientId = getAuthenticatedPatientId(user);
 
   if (!patientId) {
     throw new Error("Unauthorized");
@@ -245,7 +266,7 @@ export const getPatientAppointments = async (user, filters = {}) => {
  * Get all appointments for authenticated doctor
  */
 export const getDoctorAppointments = async (user, filters = {}) => {
-  const doctorId = getAuthenticatedUserId(user);
+  const doctorId = getAuthenticatedDoctorId(user);
 
   if (!doctorId) {
     throw new Error("Unauthorized");
@@ -273,7 +294,7 @@ export const acceptAppointment = async (appointmentId, user) => {
     throw new Error("Appointment not found");
   }
 
-  const doctorId = getAuthenticatedUserId(user);
+  const doctorId = getAuthenticatedDoctorId(user);
 
   if (appointment.doctorId.toString() !== doctorId) {
     throw new Error("Unauthorized");
@@ -299,7 +320,7 @@ export const rejectAppointment = async (appointmentId, user) => {
     throw new Error("Appointment not found");
   }
 
-  const doctorId = getAuthenticatedUserId(user);
+  const doctorId = getAuthenticatedDoctorId(user);
 
   if (appointment.doctorId.toString() !== doctorId) {
     throw new Error("Unauthorized");
@@ -316,10 +337,8 @@ export const rejectAppointment = async (appointmentId, user) => {
 };
 
 /**
- * Patient cancels appointment
+ * Calculate refund
  */
-
-// first calculate the refund
 const calculateRefund = ({ appointmentDate, startTime, amountPaid }) => {
   const appointmentDateTime = new Date(`${appointmentDate}T${startTime}:00`);
   const now = new Date();
@@ -354,7 +373,9 @@ const calculateRefund = ({ appointmentDate, startTime, amountPaid }) => {
   };
 };
 
-
+/**
+ * Patient cancels appointment
+ */
 export const cancelAppointment = async (appointmentId, data, user) => {
   const appointment = await Appointment.findById(appointmentId);
 
@@ -362,7 +383,7 @@ export const cancelAppointment = async (appointmentId, data, user) => {
     throw new Error("Appointment not found");
   }
 
-  const patientId = getAuthenticatedUserId(user);
+  const patientId = getAuthenticatedPatientId(user);
 
   if (appointment.patientId.toString() !== patientId) {
     throw new Error("Unauthorized");
@@ -411,7 +432,7 @@ export const completeAppointment = async (appointmentId, user) => {
     throw new Error("Appointment not found");
   }
 
-  const doctorId = getAuthenticatedUserId(user);
+  const doctorId = getAuthenticatedDoctorId(user);
 
   if (appointment.doctorId.toString() !== doctorId) {
     throw new Error("Unauthorized");
@@ -438,7 +459,7 @@ export const rescheduleAppointment = async (appointmentId, data, user) => {
     throw new Error("Appointment not found");
   }
 
-  const patientId = getAuthenticatedUserId(user);
+  const patientId = getAuthenticatedPatientId(user);
 
   if (appointment.patientId.toString() !== patientId) {
     throw new Error("Unauthorized");
@@ -621,7 +642,7 @@ export const doctorRescheduleAppointment = async (
     throw new Error("Appointment not found");
   }
 
-  const doctorId = getAuthenticatedUserId(user);
+  const doctorId = getAuthenticatedDoctorId(user);
 
   if (appointment.doctorId.toString() !== doctorId) {
     throw new Error("Unauthorized");
@@ -679,7 +700,7 @@ export const acceptDoctorReschedule = async (appointmentId, user) => {
     throw new Error("Appointment not found");
   }
 
-  const patientId = getAuthenticatedUserId(user);
+  const patientId = getAuthenticatedPatientId(user);
 
   if (appointment.patientId.toString() !== patientId) {
     throw new Error("Unauthorized");
@@ -737,7 +758,7 @@ export const rejectDoctorReschedule = async (
     throw new Error("Appointment not found");
   }
 
-  const patientId = getAuthenticatedUserId(user);
+  const patientId = getAuthenticatedPatientId(user);
 
   if (appointment.patientId.toString() !== patientId) {
     throw new Error("Unauthorized");

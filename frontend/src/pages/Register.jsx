@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, User, Phone, ArrowRight, AlertCircle, Loader2, Stethoscope } from 'lucide-react';
 import AuthLayout from '../components/layout/AuthLayout';
 import { patientService, doctorService } from '../services';
+import { saveAuthSession } from '../utils/session';
 
 const Register = () => {
   const [role, setRole] = useState('patient');
@@ -66,13 +67,12 @@ const Register = () => {
           pw: formData.pw 
         });
         
-        localStorage.setItem('token', loginRes.data.token);
-        localStorage.setItem('user', JSON.stringify({ 
-          ...loginRes.data.patient, 
-          role: 'patient', 
-          name: loginRes.data.patient.fullName 
-        }));
-        
+        saveAuthSession({
+          token: loginRes.data.token,
+          user: loginRes.data.patient,
+          role: 'patient',
+        });
+
         navigate('/dashboard');
       } else {
         // Doctors need approval

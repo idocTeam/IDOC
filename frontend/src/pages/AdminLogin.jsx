@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, AlertCircle, Loader2, ShieldCheck } from 'lucide-react';
 import AuthLayout from '../components/layout/AuthLayout';
 import { adminService } from '../services';
+import { saveAuthSession } from '../utils/session';
 
 const AdminLogin = () => {
   const [email, setEmail] = useState('');
@@ -19,13 +20,12 @@ const AdminLogin = () => {
     try {
       const { data } = await adminService.login({ email, pw: password });
       
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify({ 
-        ...data.admin, 
-        role: 'admin', 
-        name: 'Admin' 
-      }));
-      
+      saveAuthSession({
+        token: data.token,
+        user: { ...data.admin, fullName: 'Admin' },
+        role: 'admin',
+      });
+
       navigate('/admin/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || 'Admin login failed. Please check your credentials.');
