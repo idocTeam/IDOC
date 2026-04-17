@@ -7,6 +7,7 @@ export const patientService = {
   register: (data) => api.post('/patients/auth/register', data),
   getProfile: () => api.get('/patients/auth/me'),
   updateProfile: (data) => api.put('/patients/auth/me', data),
+  uploadMyPhoto: (formData) => api.post('/patients/auth/me/photo', formData),
   deleteProfile: () => api.delete('/patients/auth/me'),
   getById: (id) => api.get(`/patients/auth/${id}`),
 
