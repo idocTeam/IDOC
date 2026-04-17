@@ -2,8 +2,15 @@ import Stripe from "stripe";
 import Payment from "../models/Payment.js";
 import { getAppointmentById, updateAppointmentPaymentStatus } from "../utils/appointmentClient.js";
 import axios from "axios";
+import { sendAppointmentPaymentSuccessNotification } from "../utils/notificationClient.js";
+import { getPatientById } from "../utils/patientClient.js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+const isTelemedicineConsultation = (consultationType = "") => {
+  const normalizedConsultationType = String(consultationType).trim().toLowerCase();
+  return normalizedConsultationType === "online" || normalizedConsultationType === "telemedicine";
+};
 
 /**
  * POST /payments/create-checkout-session
@@ -66,8 +73,10 @@ export const createCheckoutSession = async (req, res) => {
       metadata: {
         doctorId: appointment.doctorId,
         doctorName: appointment.doctorName,
+        patientName: appointment.patientName,
         appointmentDate: appointment.appointmentDate,
         startTime: appointment.startTime,
+        endTime: appointment.endTime,
         consultationType: appointment.consultationType
       }
     });
@@ -88,51 +97,191 @@ export const createCheckoutSession = async (req, res) => {
 /**
  * Helper to update appointment and trigger post-payment actions
  */
-const completePaymentWorkflow = async (payment, appointmentId) => {
-  console.log(`Starting payment workflow for appointment: ${appointmentId}`);
+// const completePaymentWorkflow = async (payment, appointmentId) => {
+//   console.log(`Starting payment workflow for appointment: ${appointmentId}`);
   
-  try {
-    // 1. Update Appointment status in appointment-service
-    const appointmentUrl = `${process.env.APPOINTMENT_SERVICE_URL}/${appointmentId}/mark-paid`;
-    console.log(`Calling appointment-service: ${appointmentUrl}`);
+//   try {
+//     // 1. Update Appointment status in appointment-service
+//     const appointmentUrl = `${process.env.APPOINTMENT_SERVICE_URL}/${appointmentId}/mark-paid`;
+//     console.log(`Calling appointment-service: ${appointmentUrl}`);
     
-    try {
-      await axios.patch(appointmentUrl, {
-        amountPaid: payment.amount
-      });
-      console.log("Appointment status updated to paid");
-    } catch (aptErr) {
-      console.error("Failed to update appointment status:", aptErr.response?.data || aptErr.message);
-      // If appointment not found, we still want to try other things or at least not throw a generic error
-      throw new Error(`Appointment service error: ${aptErr.response?.data?.message || aptErr.message}`);
-    }
+//     try {
+//       await axios.patch(appointmentUrl, {
+//         amountPaid: payment.amount
+//       });
+//       console.log("Appointment status updated to paid");
+//     } catch (aptErr) {
+//       console.error("Failed to update appointment status:", aptErr.response?.data || aptErr.message);
+//       // If appointment not found, we still want to try other things or at least not throw a generic error
+//       throw new Error(`Appointment service error: ${aptErr.response?.data?.message || aptErr.message}`);
+//     }
 
-    // 2. Trigger Telemedicine Session creation if it's a telemedicine appointment
-    const consultationType = payment.metadata?.consultationType || "";
-    if (consultationType === "online" || consultationType === "telemedicine") {
-      const telemedicineUrl = `${process.env.TELEMEDICINE_SERVICE_URL}/sessions/create`;
-      console.log(`Calling telemedicine-service: ${telemedicineUrl}`);
+//     // 2. Trigger Telemedicine Session creation if it's a telemedicine appointment
+//     const consultationType = payment.metadata?.consultationType || "";
+//     if (consultationType === "online" || consultationType === "telemedicine") {
+//       const telemedicineUrl = `${process.env.TELEMEDICINE_SERVICE_URL}/sessions/create`;
+//       console.log(`Calling telemedicine-service: ${telemedicineUrl}`);
       
+//       try {
+//         await axios.post(telemedicineUrl, {
+//           appointmentId: appointmentId,
+//           patientId: payment.patientId,
+//           doctorId: payment.metadata?.doctorId,
+//           appointmentDate: payment.metadata?.appointmentDate,
+//           startTime: payment.metadata?.startTime
+//         });
+//         console.log("Telemedicine session created");
+//       } catch (teleErr) {
+//         console.error("Telemedicine session creation failed:", teleErr.response?.data || teleErr.message);
+//         // Don't fail the whole workflow for telemedicine session
+//       }
+//     }
+
+//     // 3. Generate E-Ticket automatically
+//     const selfUrl = process.env.PAYMENT_SERVICE_URL || `http://localhost:${process.env.PORT || 5005}`;
+//     const ticketUrl = `${selfUrl}/generate-ticket/${appointmentId}`;
+//     console.log(`Calling generate-ticket: ${ticketUrl}`);
+    
+//     try {
+//       await axios.post(ticketUrl);
+//       console.log("E-Ticket generated");
+//     } catch (ticketErr) {
+//       console.error("Ticket generation failed:", ticketErr.response?.data || ticketErr.message);
+//     }
+
+//     console.log(`Payment workflow completed for appointment ${appointmentId}`);
+//   } catch (err) {
+//     console.error("Error in completePaymentWorkflow:", err.response?.data || err.message);
+//     throw new Error(`Workflow failed: ${err.response?.data?.message || err.message}`);
+//   }
+// };
+
+const completePaymentWorkflow = async (payment, appointmentId, token = null) => {
+  console.log(`Starting payment workflow for appointment: ${appointmentId}`);
+
+  try {
+    // 1. Mark appointment as paid
+    const appointmentUrl = `${process.env.APPOINTMENT_SERVICE_URL}/${appointmentId}/mark-paid`;
+    let appointment = null;
+
+    const markPaidResponse = await axios.patch(
+      appointmentUrl,
+      { amountPaid: payment.amount },
+      token
+        ? {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
+        : {}
+    );
+
+    console.log("Appointment status updated to paid");
+    appointment = markPaidResponse?.data?.appointment || null;
+
+    // 2. Create telemedicine session if online
+    const consultationType = payment.metadata?.consultationType || "";
+
+    if (consultationType === "online" || consultationType === "telemedicine") {
       try {
-        await axios.post(telemedicineUrl, {
-          appointmentId: appointmentId,
+        await axios.post(`${process.env.TELEMEDICINE_SERVICE_URL}/sessions/create`, {
+          appointmentId,
           patientId: payment.patientId,
           doctorId: payment.metadata?.doctorId,
           appointmentDate: payment.metadata?.appointmentDate,
           startTime: payment.metadata?.startTime
         });
+
         console.log("Telemedicine session created");
       } catch (teleErr) {
         console.error("Telemedicine session creation failed:", teleErr.response?.data || teleErr.message);
-        // Don't fail the whole workflow for telemedicine session
       }
     }
 
-    // 3. Generate E-Ticket automatically
+    // 3. Fetch latest appointment if not returned by mark-paid
+    if (!appointment) {
+      try {
+        const appointmentResponse = await axios.get(
+          `${process.env.APPOINTMENT_SERVICE_URL}/${appointmentId}`,
+          token
+            ? {
+                headers: {
+                  Authorization: `Bearer ${token}`
+                }
+              }
+            : {}
+        );
+        appointment = appointmentResponse.data?.appointment || appointmentResponse.data || null;
+      } catch (appointmentFetchError) {
+        console.warn(
+          `Failed to fetch appointment details for ${appointmentId}:`,
+          appointmentFetchError.response?.data || appointmentFetchError.message
+        );
+      }
+    }
+
+    // Minimal fallback for webhook flow (no auth token) so notification can still be sent.
+    if (!appointment) {
+      appointment = {
+        _id: appointmentId,
+        patientId: payment.patientId,
+        doctorName: payment.metadata?.doctorName || "",
+        appointmentDate: payment.metadata?.appointmentDate || "",
+        startTime: payment.metadata?.startTime || "",
+        endTime: payment.metadata?.endTime || "",
+        consultationType: payment.metadata?.consultationType || "",
+        patientName: payment.metadata?.patientName || ""
+      };
+    }
+
+    // 4. Fetch patient email
+    const patient = await getPatientById(appointment.patientId);
+    const patientEmail = patient?.email || appointment?.patientEmail || "";
+
+    // 5. Fetch telemedicine session
+    let telemedicineSession = null;
+
+    if (isTelemedicineConsultation(appointment.consultationType)) {
+      try {
+        const telemedicineResponse = await axios.get(
+          `${process.env.TELEMEDICINE_SERVICE_URL}/sessions/appointment/${appointmentId}`
+        );
+
+        telemedicineSession = telemedicineResponse.data?.session || telemedicineResponse.data || null;
+      } catch (error) {
+        console.error("Failed to fetch telemedicine session:", error.message);
+      }
+    }
+
+    // 6. Send email via notification-service
+    if (patientEmail) {
+      await sendAppointmentPaymentSuccessNotification({
+        recipient: {
+          userId: appointment.patientId,
+          email: patientEmail,
+          role: "patient"
+        },
+        data: {
+          patientName: appointment.patientName || patient?.fullName || "Patient",
+          appointmentId: appointment._id,
+          patientId: appointment.patientId,
+          doctorName: appointment.doctorName,
+          appointmentDate: appointment.appointmentDate,
+          startTime: appointment.startTime,
+          endTime: appointment.endTime,
+          paymentStatus: "paid",
+          consultationType: appointment.consultationType,
+          videoMeetingLink: telemedicineSession?.jitsiLink || ""
+        }
+      });
+    } else {
+      console.warn(`Payment success notification skipped: missing patient email for appointment ${appointmentId}`);
+    }
+
+    // 7. Generate e-ticket
     const selfUrl = process.env.PAYMENT_SERVICE_URL || `http://localhost:${process.env.PORT || 5005}`;
     const ticketUrl = `${selfUrl}/generate-ticket/${appointmentId}`;
-    console.log(`Calling generate-ticket: ${ticketUrl}`);
-    
+
     try {
       await axios.post(ticketUrl);
       console.log("E-Ticket generated");

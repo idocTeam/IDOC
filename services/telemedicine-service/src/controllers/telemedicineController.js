@@ -168,3 +168,22 @@ export const getSessionByAppointment = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+export const getSessionByAppointmentId = async (req, res) => {
+  try {
+    const { appointmentId } = req.params;
+
+    const session = await TelemedicineSession.findOne({ appointmentId });
+
+    if (!session) {
+      return res.status(404).json({ message: "Telemedicine session not found" });
+    }
+
+    return res.status(200).json(session);
+  } catch (error) {
+    return res.status(500).json({
+      message: "Failed to fetch telemedicine session",
+      error: error.message
+    });
+  }
+};

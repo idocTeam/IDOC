@@ -5,6 +5,7 @@ import appointmentAcceptedTemplate from "../templates/appointmentAccepted.js";
 import appointmentRejectedTemplate from "../templates/appointmentRejected.js";
 import appointmentCancelledTemplate from "../templates/appointmentCancelled.js";
 import reminderTemplate from "../templates/reminder.js";
+import appointmentPaymentSuccessTemplate from "../templates/appointmentPaymentSuccess.js";
 
 export const buildTemplateByType = (type, data = {}) => {
   switch (type) {
@@ -23,6 +24,9 @@ export const buildTemplateByType = (type, data = {}) => {
     case "APPOINTMENT_REMINDER":
       return reminderTemplate(data);
 
+    case "APPOINTMENT_PAYMENT_SUCCESS":
+      return appointmentPaymentSuccessTemplate(data);
+      
     case "GENERIC":
     default:
       return {

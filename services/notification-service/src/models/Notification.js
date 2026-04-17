@@ -13,7 +13,8 @@ const notificationSchema = new mongoose.Schema(
         "APPOINTMENT_ACCEPTED",
         "APPOINTMENT_REJECTED",
         "APPOINTMENT_CANCELLED",
-        "APPOINTMENT_REMINDER"
+        "APPOINTMENT_REMINDER",
+        "APPOINTMENT_PAYMENT_SUCCESS"
       ]
     },
 
