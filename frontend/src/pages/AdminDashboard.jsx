@@ -56,6 +56,12 @@ const AdminDashboard = () => {
 
   const navigate = useNavigate();
 
+  const getPhotoUrl = (photoPath) => {
+    if (!photoPath) return null;
+    if (photoPath.startsWith('http')) return photoPath;
+    return `${apiOrigin}/api/doctors${photoPath}`;
+  };
+
   useEffect(() => {
     fetchInitialData();
   }, []);
@@ -798,8 +804,12 @@ const AdminDashboard = () => {
 
             <div className="p-8 max-h-[70vh] overflow-y-auto">
               <div className="flex flex-col md:flex-row gap-8 mb-8">
-                <div className="w-24 h-24 bg-primary-100 rounded-3xl flex items-center justify-center text-primary-600 text-3xl font-black shrink-0">
-                  {selectedDoctor.fullName[0]}
+                <div className="w-24 h-24 bg-primary-100 rounded-3xl flex items-center justify-center text-primary-600 text-3xl font-black shrink-0 overflow-hidden">
+                  {selectedDoctor.photoPath ? (
+                    <img src={getPhotoUrl(selectedDoctor.photoPath)} alt={selectedDoctor.fullName} className="w-full h-full object-cover" />
+                  ) : (
+                    selectedDoctor.fullName[0]
+                  )}
                 </div>
                 <div className="space-y-4">
                   <div>

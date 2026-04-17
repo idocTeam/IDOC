@@ -9,7 +9,7 @@ const escapeRegex = (value = "") => {
 
 // Public-safe fields for patient-facing responses
 const PUBLIC_DOCTOR_FIELDS =
-  "fullName specialty qualifications hospital consultationFee bio experienceYears availability createdAt updatedAt";
+  "fullName specialty qualifications hospital consultationFee bio experienceYears availability photoPath createdAt updatedAt";
 
 // Internal fields for doctor/internal-service use
 const INTERNAL_DOCTOR_FIELDS =
