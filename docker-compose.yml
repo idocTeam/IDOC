@@ -146,6 +146,20 @@ services:
       - mongodb
     restart: unless-stopped
 
+  ai-symptoms-service:
+    build:
+      context: ./services/ai-symptoms-service
+    container_name: idoc-ai-symptoms-service
+    ports:
+      - "3007:3007"
+    env_file:
+      - ./services/ai-symptoms-service/.env
+    environment:
+      PORT: 3007
+    depends_on:
+      - mongodb
+    restart: unless-stopped
+
   mongodb:
     image: mongo:latest
     container_name: idoc-mongodb
