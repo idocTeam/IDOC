@@ -70,12 +70,21 @@ export const appointmentService = {
 };
 
 export const paymentService = {
-  createCheckoutSession: (appointmentId) => api.post('/payments/create-checkout-session', { appointmentId }),
+  createCheckoutSession: (appointmentId) =>
+    api.post('/payments/create-checkout-session', { appointmentId }),
+
   verifyPayment: (sessionId, appointmentId) =>
     api.get('/payments/verify-payment', {
       params: { session_id: sessionId, appointmentId }
     }),
+
   getTicket: (appointmentId) => api.get(`/payments/ticket/${appointmentId}`),
+
+  simulateSuccess: (appointmentId) =>
+    api.post(`/payments/simulate-success/${appointmentId}`),
+
+  simulateFailure: (appointmentId, reason = 'Simulated payment failure') =>
+    api.post(`/payments/simulate-failure/${appointmentId}`, { reason }),
 };
 
 export const telemedicineService = {
@@ -84,11 +93,26 @@ export const telemedicineService = {
 
 export const adminService = {
   login: (credentials) => api.post('/admin/auth/login', credentials),
+
   getPendingDoctors: (params) => api.get('/admin/doctors/pending', { params }),
   getApprovedDoctors: (params) => api.get('/admin/doctors/approved', { params }),
   approveDoctor: (id) => api.patch(`/admin/doctors/${id}/approve`),
-  rejectDoctor: (id, rejectionReason) => api.patch(`/admin/doctors/${id}/reject`, { rejectionReason }),
+  rejectDoctor: (id, rejectionReason) =>
+    api.patch(`/admin/doctors/${id}/reject`, { rejectionReason }),
   deleteDoctor: (id) => api.delete(`/admin/doctors/${id}`),
+
   getAllPatients: () => api.get('/admin/patients'),
   deletePatient: (id) => api.delete(`/admin/patients/${id}`),
+
+  // Finance module
+  getFinanceSummary: () => api.get('/payments/admin/finance/summary'),
+
+  getTransactions: (params = {}) =>
+    api.get('/payments/admin/finance/transactions', { params }),
+
+  getTransactionById: (id) =>
+    api.get(`/payments/admin/finance/transactions/${id}`),
+
+  getFailedPayments: (params = {}) =>
+    api.get('/payments/admin/finance/failed-payments', { params }),
 };
